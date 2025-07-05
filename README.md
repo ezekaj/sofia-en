@@ -139,9 +139,17 @@ Für lokale Tests ohne LiveKit:
 python demo_agent.py  # Konsolen-Version
 ```
 
-## Lizenz
+## Sicherheitshinweise
 
-MIT License - Siehe LICENSE Datei für Details.
+⚠️ **Privates Repository**: Dieses Repository ist als privat konfiguriert für den sicheren Umgang mit:
+- API-Keys und Credentials
+- Praxisdaten und Patienteninformationen
+- Geschäftsinterne Konfigurationen
+
+🔐 **Datenschutz**: 
+- Alle sensiblen Daten werden über `.env` Dateien verwaltet
+- `.env` Dateien werden nicht in Git gespeichert (.gitignore)
+- Nur autorisierte Personen haben Zugriff auf das Repository
 
 ## Support
 
