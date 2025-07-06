@@ -19,7 +19,27 @@ from dental_tools import (
     reschedule_appointment,
     answer_faq,
     get_insurance_info,
-    get_payment_info
+    get_payment_info,
+    get_naechste_freie_termine,
+    get_tagesplan_arzt,
+    get_wochenuebersicht_arzt,
+    termin_buchen_erweitert,
+    get_patientenhistorie,
+    termine_suchen,
+    get_praxis_statistiken,
+    termin_absagen,
+    check_verfuegbarkeit_erweitert,
+    parse_terminwunsch,
+    get_aktuelle_datetime_info,
+    get_intelligente_terminvorschlaege,
+    termin_buchen_mit_details,
+    termin_direkt_buchen,
+    check_verfuegbarkeit_spezifisch,
+    gespraech_beenden,
+    notiz_hinzufuegen,
+    gespraech_status,
+    get_zeitabhaengige_begruessung,
+    call_manager  # Import the call manager
 )
 
 load_dotenv()
@@ -48,9 +68,57 @@ class DentalReceptionist(Agent):
                 reschedule_appointment,
                 answer_faq,
                 get_insurance_info,
-                get_payment_info
+                get_payment_info,
+                get_naechste_freie_termine,
+                get_tagesplan_arzt,
+                get_wochenuebersicht_arzt,
+                termin_buchen_erweitert,
+                get_patientenhistorie,
+                termine_suchen,
+                get_praxis_statistiken,
+                termin_absagen,
+                check_verfuegbarkeit_erweitert,
+                parse_terminwunsch,
+                get_aktuelle_datetime_info,
+                get_intelligente_terminvorschlaege,
+                termin_buchen_mit_details,
+                termin_direkt_buchen,
+                check_verfuegbarkeit_spezifisch,
+                gespraech_beenden,
+                notiz_hinzufuegen,
+                gespraech_status,
+                get_zeitabhaengige_begruessung
             ],
         )
+        self.should_end_conversation = False
+    
+    async def handle_response(self, response: str) -> str:
+        """
+        Verarbeitet die Antwort und prüft auf Gesprächsende-Signal
+        KRITISCH: Bei Ende-Signal SOFORT beenden!
+        """
+        # Prüfe auf Ende-Signal
+        if "*[CALL_END_SIGNAL]*" in response:
+            self.should_end_conversation = True
+            logging.info("🔴 Gesprächsende-Signal erkannt - Gespräch wird SOFORT beendet")
+            # Entferne das Signal aus der Antwort
+            response = response.replace("*[CALL_END_SIGNAL]*", "")
+            
+            # SOFORT beenden - keine weiteren Nachrichten!
+            logging.info("🚨 KRITISCH: Gespräch MUSS SOFORT beendet werden!")
+            
+        # Prüfe auch den CallManager-Status
+        if call_manager.is_conversation_ended():
+            self.should_end_conversation = True
+            logging.info("🔴 CallManager signalisiert Gesprächsende - SOFORT beenden")
+            
+        return response
+    
+    def is_conversation_ended(self) -> bool:
+        """
+        Prüft, ob das Gespräch beendet werden soll
+        """
+        return self.should_end_conversation or call_manager.is_conversation_ended()
 
 
 async def entrypoint(ctx: agents.JobContext):
@@ -119,10 +187,55 @@ async def entrypoint(ctx: agents.JobContext):
         instructions=SESSION_INSTRUCTION,
     )
     
-    # Keep the agent running
-    await ctx.wait_for_shutdown()
-    print("🛑 Agent beendet")
-    logger.info("Agent shutdown")
+    # Überwachungsschleife für automatisches Gesprächsende
+    async def monitor_conversation_end():
+        """
+        Überwacht den Gesprächsstatus und beendet die Verbindung SOFORT wenn nötig
+        """
+        while True:
+            try:
+                # Prüfe HÄUFIGER - alle 0.5 Sekunden für sofortiges Beenden
+                await asyncio.sleep(0.5)
+                
+                # Prüfe ob das Gespräch beendet werden soll
+                if agent.is_conversation_ended():
+                    print("🔴 Gesprächsende erkannt - Beende Verbindung SOFORT!")
+                    logger.info("Conversation end detected - Ending connection IMMEDIATELY")
+                    
+                    # SOFORT beenden - keine Wartezeit!
+                    print("📞 Verbindung wird SOFORT beendet...")
+                    logger.info("Ending connection immediately...")
+                    
+                    # Versuche die Verbindung ordnungsgemäß zu beenden
+                    try:
+                        await ctx.room.disconnect()
+                        print("✅ Verbindung erfolgreich beendet")
+                        logger.info("Connection ended successfully")
+                    except Exception as disconnect_error:
+                        print(f"⚠️ Fehler beim Beenden der Verbindung: {disconnect_error}")
+                        logger.error(f"Error ending connection: {disconnect_error}")
+                    
+                    break
+                    
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Fehler in der Gesprächsüberwachung: {e}")
+                await asyncio.sleep(5)  # Warte länger bei Fehlern
+    
+    # Starte die Überwachung als Background-Task
+    monitor_task = asyncio.create_task(monitor_conversation_end())
+    
+    # Warte auf Shutdown oder Gesprächsende
+    try:
+        await ctx.wait_for_shutdown()
+    except Exception as e:
+        logger.info(f"Shutdown durch Gesprächsende: {e}")
+    finally:
+        # Cleanup
+        monitor_task.cancel()
+        print("🛑 Agent beendet")
+        logger.info("Agent shutdown")
 
 
 if __name__ == "__main__":
