@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Ihre Termine{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="text-align: center; margin-bottom: 30px; color: #2c3e50;">
+        👤 Anmeldung für Ihre Termine
+    </h2>
+    
+    <div class="alert alert-info">
+        <strong>🔒 Datenschutz:</strong> Geben Sie Ihren Namen oder Ihre Telefonnummer ein, 
+        um nur IHRE persönlichen Termine zu sehen. Fremde Termine bleiben privat.
+    </div>
+    
+    <form action="/meine_termine" method="GET">
+        <div class="form-group">
+            <label for="patient_name">👤 Ihr Name:</label>
+            <input type="text" 
+                   id="patient_name" 
+                   name="patient_name" 
+                   placeholder="z.B. Max Mustermann"
+                   required>
+        </div>
+        
+        <div class="form-group">
+            <label for="telefon">📞 Ihre Telefonnummer (optional):</label>
+            <input type="text" 
+                   id="telefon" 
+                   name="telefon" 
+                   placeholder="z.B. 030 12345678">
+        </div>
+        
+        <div class="form-group">
+            <label for="zeitraum">📅 Welche Termine möchten Sie sehen?</label>
+            <select id="zeitraum" name="zeitraum">
+                <option value="zukunft">🔮 Zukünftige Termine</option>
+                <option value="alle">📋 Alle Termine</option>
+                <option value="vergangen">📜 Vergangene Termine</option>
+            </select>
+        </div>
+        
+        <div style="text-align: center;">
+            <button type="submit" class="btn">
+                🔍 Meine Termine anzeigen
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="color: #2c3e50; margin-bottom: 20px;">ℹ️ Hinweise:</h3>
+    <ul style="line-height: 1.8; color: #555;">
+        <li><strong>🔐 Sicher:</strong> Sie sehen nur Ihre eigenen Termine</li>
+        <li><strong>📱 Einfach:</strong> Name oder Telefonnummer genügt</li>
+        <li><strong>⚡ Schnell:</strong> Sofortige Anzeige Ihrer Termine</li>
+        <li><strong>🎯 Flexibel:</strong> Verschiedene Zeiträume wählbar</li>
+    </ul>
+</div>
+
+<script>
+// Automatischer Fokus auf das Namensfeld
+document.getElementById('patient_name').focus();
+
+// Enter-Taste im Telefon-Feld sendet das Formular ab
+document.getElementById('telefon').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.querySelector('form').submit();
+    }
+});
+</script>
+{% endblock %}

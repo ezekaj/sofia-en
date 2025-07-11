@@ -53,14 +53,28 @@ class AppointmentManager:
         conn.close()
         print("✅ Terminverwaltung-Datenbank initialisiert")
     
-    def termin_hinzufuegen(self, patient_name: str, telefon: str, datum: str, 
-                          uhrzeit: str, behandlungsart: str, email: str = "", 
+    def termin_hinzufuegen(self, patient_name: str, telefon: str, datum: str,
+                          uhrzeit: str, behandlungsart: str, email: str = "",
                           beschreibung: str = "", notizen: str = "") -> str:
-        """Fügt einen neuen Termin hinzu"""
+        """
+        Fügt einen neuen Termin hinzu
+        ✅ VERHINDERT Termine in der Vergangenheit
+        """
         try:
-            # Prüfe Verfügbarkeit
+            # ✅ VERGANGENHEITS-PRÜFUNG: Explizite Validierung
+            try:
+                termin_datetime = datetime.strptime(f"{datum} {uhrzeit}", "%Y-%m-%d %H:%M")
+                jetzt = datetime.now()
+
+                if termin_datetime <= jetzt:
+                    return f"❌ Der Termin am {datum} um {uhrzeit} liegt in der Vergangenheit. Bitte wählen Sie einen zukünftigen Termin."
+
+            except ValueError:
+                return f"❌ Ungültiges Datum- oder Zeitformat: {datum} {uhrzeit}"
+
+            # Prüfe Verfügbarkeit (beinhaltet jetzt auch Vergangenheits-Prüfung)
             if not self.ist_verfuegbar(datum, uhrzeit):
-                return f"❌ Termin am {datum} um {uhrzeit} ist bereits belegt"
+                return f"❌ Termin am {datum} um {uhrzeit} ist nicht verfügbar"
             
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -86,19 +100,34 @@ class AppointmentManager:
             return f"❌ Fehler beim Buchen des Termins: {str(e)}"
     
     def ist_verfuegbar(self, datum: str, uhrzeit: str) -> bool:
-        """Prüft ob ein Terminslot verfügbar ist"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT COUNT(*) FROM termine 
-            WHERE datum = ? AND uhrzeit = ? AND status = 'bestätigt'
-        ''', (datum, uhrzeit))
-        
-        count = cursor.fetchone()[0]
-        conn.close()
-        
-        return count == 0
+        """
+        Prüft ob ein Terminslot verfügbar ist
+        ✅ VERHINDERT Termine in der Vergangenheit
+        """
+        try:
+            # ✅ VERGANGENHEITS-PRÜFUNG: Keine Termine in der Vergangenheit
+            termin_datetime = datetime.strptime(f"{datum} {uhrzeit}", "%Y-%m-%d %H:%M")
+            jetzt = datetime.now()
+
+            if termin_datetime <= jetzt:
+                return False  # Termine in Vergangenheit sind NICHT verfügbar
+
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM termine
+                WHERE datum = ? AND uhrzeit = ? AND status = 'bestätigt'
+            ''', (datum, uhrzeit))
+
+            count = cursor.fetchone()[0]
+            conn.close()
+
+            return count == 0
+
+        except ValueError:
+            # Ungültiges Datum/Zeit-Format
+            return False
     
     def get_verfuegbare_termine(self, ab_datum: str = "", anzahl: int = 10) -> List[Dict]:
         """Findet die nächsten verfügbaren Termine"""
@@ -670,29 +699,57 @@ class AppointmentManager:
         return titel, datum, uhrzeit, behandlungsart, kontext
     
     def get_current_datetime_info(self) -> Dict:
-        """Gibt aktuelle Datum/Zeit-Informationen zurück für die KI"""
-        jetzt = datetime.now()
-        return {
-            "aktuelles_datum": jetzt.strftime('%Y-%m-%d'),
-            "aktuelle_uhrzeit": jetzt.strftime('%H:%M'),
-            "wochentag": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"][jetzt.weekday()],
-            "wochentag_nummer": jetzt.weekday(),
-            "tag": jetzt.day,
-            "monat": jetzt.month,
-            "jahr": jetzt.year,
-            "kalenderwoche": jetzt.isocalendar()[1],
-            "ist_wochenende": jetzt.weekday() >= 5,
-            "ist_arbeitstag": jetzt.weekday() < 6,
-            "morgen": (jetzt + timedelta(days=1)).strftime('%Y-%m-%d'),
+        """
+        ✅ REPARIERT: Verwendet die zentrale get_current_datetime_info() Funktion
+        Verhindert Datums-Inkonsistenzen zwischen verschiedenen Modulen
+        """
+        from .dental_tools import get_current_datetime_info
+
+        # Verwende die zentrale Funktion
+        zentrale_info = get_current_datetime_info()
+
+        # Erweitere um appointment_manager spezifische Informationen
+        jetzt = zentrale_info['datetime']
+
+        # Kombiniere zentrale Info mit lokalen Erweiterungen
+        erweiterte_info = zentrale_info.copy()
+        erweiterte_info.update({
+            # Zusätzliche appointment_manager spezifische Felder
+            "aktuelles_datum": zentrale_info['date_iso'],
+            "aktuelle_uhrzeit": zentrale_info['time_formatted'],
+            "wochentag": zentrale_info['weekday'],
+            "wochentag_nummer": zentrale_info['weekday_number'],
+            "tag": zentrale_info['day'],
+            "monat": zentrale_info['month'],
+            "jahr": zentrale_info['year'],
+            "kalenderwoche": zentrale_info['week_number'],
+            "ist_wochenende": zentrale_info['is_weekend'],
+            "ist_arbeitstag": zentrale_info['is_workday'],
+            "morgen": zentrale_info['tomorrow_iso'],
             "übermorgen": (jetzt + timedelta(days=2)).strftime('%Y-%m-%d'),
-            "nächste_woche": (jetzt + timedelta(days=7)).strftime('%Y-%m-%d'),
-            "formatiert": jetzt.strftime('%d.%m.%Y %H:%M'),
-            "formatiert_lang": jetzt.strftime('%A, %d. %B %Y um %H:%M Uhr'),
-            "ist_heute_arbeitstag": jetzt.weekday() < 6,
+            # ✅ KORREKTE "nächste Woche" Berechnung - nächster Montag
+            "nächste_woche": self._berechne_naechste_woche(jetzt).strftime('%Y-%m-%d'),
+            "formatiert": zentrale_info['date_time_formatted'],
+            "formatiert_lang": zentrale_info['date_time_long'],
+            "ist_heute_arbeitstag": zentrale_info['is_workday'],
             "praxis_offen": self.ist_praxis_offen(jetzt),
             "arbeitszeiten_heute": self.get_arbeitszeiten_heute(jetzt.weekday())
-        }
-    
+        })
+
+        return erweiterte_info
+
+    def _berechne_naechste_woche(self, jetzt: datetime) -> datetime:
+        """
+        ✅ KORREKTE Berechnung der nächsten Woche = nächster Montag
+        Nicht einfach +7 Tage, sondern der tatsächliche nächste Montag
+        """
+        # Tage bis zum nächsten Montag berechnen
+        tage_bis_naechster_montag = (7 - jetzt.weekday()) % 7
+        if tage_bis_naechster_montag == 0:  # Heute ist Montag
+            tage_bis_naechster_montag = 7  # Nächster Montag
+
+        return jetzt + timedelta(days=tage_bis_naechster_montag)
+
     def ist_praxis_offen(self, datum_zeit: datetime) -> bool:
         """Prüft ob die Praxis zu einer bestimmten Zeit geöffnet ist"""
         wochentag = datum_zeit.weekday()

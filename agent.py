@@ -8,8 +8,8 @@ from livekit.plugins import (
     noise_cancellation,
 )
 from livekit.plugins import google
-from prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
-from dental_tools import (
+from src.prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
+from src.dental_tools import (
     schedule_appointment,
     check_availability,
     get_clinic_info,
@@ -25,7 +25,14 @@ from dental_tools import (
     get_wochenuebersicht_arzt,
     termin_buchen_erweitert,
     get_patientenhistorie,
-    termine_suchen,
+    termine_suchen_praxis,
+    meine_termine_finden,
+    medizinische_nachfragen_stellen,
+    intelligente_terminbuchung_mit_nachfragen,
+    namen_erkennen_und_speichern,
+    intelligente_antwort_mit_namen_erkennung,
+    gespraech_hoeflich_beenden,
+    erkennung_gespraechsende_wunsch,
     get_praxis_statistiken,
     termin_absagen,
     check_verfuegbarkeit_erweitert,
@@ -74,7 +81,14 @@ class DentalReceptionist(Agent):
                 get_wochenuebersicht_arzt,
                 termin_buchen_erweitert,
                 get_patientenhistorie,
-                termine_suchen,
+                termine_suchen_praxis,
+                meine_termine_finden,
+                medizinische_nachfragen_stellen,
+                intelligente_terminbuchung_mit_nachfragen,
+                namen_erkennen_und_speichern,
+                intelligente_antwort_mit_namen_erkennung,
+                gespraech_hoeflich_beenden,
+                erkennung_gespraechsende_wunsch,
                 get_praxis_statistiken,
                 termin_absagen,
                 check_verfuegbarkeit_erweitert,
@@ -182,58 +196,29 @@ async def entrypoint(ctx: agents.JobContext):
     print("🎯 Bereit zum Zuhören! Sprechen Sie jetzt...")
     logger.info("Agent ready to listen")
     
-    # Generate initial greeting
+    # Generate initial greeting with AUTOMATIC date/time detection
     await session.generate_reply(
-        instructions=SESSION_INSTRUCTION,
+        instructions=SESSION_INSTRUCTION + "\n\n**WICHTIG**: Rufen Sie SOFORT `get_zeitabhaengige_begruessung()` für die automatische Begrüßung auf!",
     )
     
-    # Überwachungsschleife für automatisches Gesprächsende
-    async def monitor_conversation_end():
-        """
-        Überwacht den Gesprächsstatus und beendet die Verbindung SOFORT wenn nötig
-        """
-        while True:
-            try:
-                # Prüfe HÄUFIGER - alle 0.5 Sekunden für sofortiges Beenden
-                await asyncio.sleep(0.5)
-                
-                # Prüfe ob das Gespräch beendet werden soll
-                if agent.is_conversation_ended():
-                    print("🔴 Gesprächsende erkannt - Beende Verbindung SOFORT!")
-                    logger.info("Conversation end detected - Ending connection IMMEDIATELY")
-                    
-                    # SOFORT beenden - keine Wartezeit!
-                    print("📞 Verbindung wird SOFORT beendet...")
-                    logger.info("Ending connection immediately...")
-                    
-                    # Versuche die Verbindung ordnungsgemäß zu beenden
-                    try:
-                        await ctx.room.disconnect()
-                        print("✅ Verbindung erfolgreich beendet")
-                        logger.info("Connection ended successfully")
-                    except Exception as disconnect_error:
-                        print(f"⚠️ Fehler beim Beenden der Verbindung: {disconnect_error}")
-                        logger.error(f"Error ending connection: {disconnect_error}")
-                    
-                    break
-                    
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error(f"Fehler in der Gesprächsüberwachung: {e}")
-                await asyncio.sleep(5)  # Warte länger bei Fehlern
+    # KEIN automatisches Gesprächsende-Monitoring
+    # Sofia läuft kontinuierlich ohne Unterbrechungen
     
-    # Starte die Überwachung als Background-Task
-    monitor_task = asyncio.create_task(monitor_conversation_end())
+    # KEIN automatisches Monitoring - Sofia läuft kontinuierlich
     
-    # Warte auf Shutdown oder Gesprächsende
+    # Warte auf Shutdown - OHNE automatisches Beenden
     try:
-        await ctx.wait_for_shutdown()
+        # Endlos-Schleife - Agent läuft kontinuierlich
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Agent manuell beendet")
     except Exception as e:
-        logger.info(f"Shutdown durch Gesprächsende: {e}")
+        logger.info(f"Agent Fehler: {e}")
+        # Bei Fehlern weiter laufen lassen
+        await asyncio.sleep(5)
     finally:
-        # Cleanup
-        monitor_task.cancel()
+        # Cleanup nur bei echtem Shutdown
         print("🛑 Agent beendet")
         logger.info("Agent shutdown")
 

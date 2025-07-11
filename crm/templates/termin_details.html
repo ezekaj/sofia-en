@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Termin Details - {{ termin.datum }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 style="color: #2c3e50;">📋 Termin Details</h2>
+        <a href="javascript:history.back()" class="btn">← Zurück</a>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <div>
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">👤 Patienteninformationen</h3>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <p style="margin-bottom: 10px;"><strong>Name:</strong> {{ termin.patient_name }}</p>
+                <p style="margin-bottom: 10px;"><strong>Telefon:</strong> {{ termin.telefon }}</p>
+                {% if termin.email %}
+                <p style="margin-bottom: 10px;"><strong>E-Mail:</strong> {{ termin.email }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div>
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">📅 Termininformationen</h3>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <p style="margin-bottom: 10px;"><strong>Datum:</strong> {{ termin.datum }}</p>
+                <p style="margin-bottom: 10px;"><strong>Uhrzeit:</strong> {{ termin.uhrzeit }}</p>
+                <p style="margin-bottom: 10px;"><strong>Status:</strong> 
+                    {% if termin.status == 'bestätigt' %}
+                        <span style="background: #28a745; color: white; padding: 4px 12px; border-radius: 4px;">✅ Bestätigt</span>
+                    {% elif termin.status == 'abgesagt' %}
+                        <span style="background: #dc3545; color: white; padding: 4px 12px; border-radius: 4px;">❌ Abgesagt</span>
+                    {% else %}
+                        <span style="background: #ffc107; color: white; padding: 4px 12px; border-radius: 4px;">⏳ {{ termin.status }}</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">🦷 Behandlungsinformationen</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p style="margin-bottom: 15px;"><strong>Behandlungsart:</strong> {{ termin.behandlungsart }}</p>
+            {% if termin.beschreibung %}
+            <p style="margin-bottom: 15px;"><strong>Beschreibung:</strong></p>
+            <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea;">
+                {{ termin.beschreibung }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if termin.notizen %}
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">📝 Notizen</h3>
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            {{ termin.notizen }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">ℹ️ Systeminformationen</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; font-size: 14px; color: #6c757d;">
+            <p style="margin-bottom: 10px;"><strong>Termin-ID:</strong> {{ termin.id }}</p>
+            <p style="margin-bottom: 10px;"><strong>Erstellt am:</strong> {{ termin.erstellt_am }}</p>
+            {% if termin.aktualisiert_am != termin.erstellt_am %}
+            <p style="margin-bottom: 10px;"><strong>Zuletzt aktualisiert:</strong> {{ termin.aktualisiert_am }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div style="text-align: center; border-top: 1px solid #dee2e6; padding-top: 30px;">
+        <a href="javascript:history.back()" class="btn" style="margin-right: 15px;">← Zurück zur Übersicht</a>
+        <a href="/" class="btn">🏠 Zur Startseite</a>
+    </div>
+</div>
+
+<style>
+@media (max-width: 768px) {
+    div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+{% endblock %}
