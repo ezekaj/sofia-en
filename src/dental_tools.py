@@ -1,10 +1,90 @@
 import logging
+import re
+from functools import lru_cache
 from livekit.agents import function_tool, RunContext
 from datetime import datetime, timedelta, timedelta
 from typing import Optional, Dict, List
 from enum import Enum
 import json
 import locale
+# 🚀 PERFORMANCE BOOST: Fuzzy Times für unscharfe Zeitangaben
+FUZZY_TIMES = {
+    "kurz nach 14": "14:15",
+    "kurz nach 2": "14:15",
+    "gegen halb 3": "14:30",
+    "gegen halb 15": "14:30",
+    "später nachmittag": "16:00",
+    "früher nachmittag": "13:00",
+    "früh morgens": "08:00",
+    "spät abends": "19:00",
+    "mittags": "12:00",
+    "gegen mittag": "12:00",
+    "am vormittag": "10:00",
+    "vormittags": "10:00",
+    "nachmittags": "15:00",
+    "am nachmittag": "15:00",
+    "gegen 14": "14:00",
+    "gegen 15": "15:00",
+    "gegen 16": "16:00",
+    "gegen 17": "17:00",
+    "kurz vor 15": "14:45",
+    "kurz vor 16": "15:45",
+    "kurz vor 17": "16:45",
+    "nach dem mittagessen": "13:30",
+    "vor dem mittagessen": "11:30",
+    "nach feierabend": "18:00",
+    "in der mittagspause": "12:30"
+}
+
+# Context Stack für Conversational Repair
+class ContextStack:
+    """🧠 SMART FALLBACK: Stateful Dialog für Korrekturen"""
+    def __init__(self):
+        self.last_slot = None
+        self.last_appointment_request = None
+        self.conversation_context = {}
+
+    def set_last_slot(self, slot_data):
+        """Speichert den letzten Terminvorschlag"""
+        self.last_slot = slot_data
+
+    def repair_time(self, user_input):
+        """Repariert Zeitangaben bei Korrekturen wie 'Nein, lieber 11:30'"""
+        if self.last_slot and any(word in user_input.lower() for word in ["lieber", "besser", "stattdessen", "nein"]):
+            # Extrahiere neue Zeit aus Input
+            new_time = self._extract_time_from_correction(user_input)
+            if new_time and self.last_slot:
+                # Ersetze Zeit im letzten Slot
+                corrected_slot = self.last_slot.copy()
+                corrected_slot['uhrzeit'] = new_time
+                return corrected_slot
+        return None
+
+    def _extract_time_from_correction(self, text):
+        """Extrahiert Zeit aus Korrektur-Text"""
+        import re
+        # Suche nach Zeitformaten in Korrekturen
+        time_patterns = [
+            r'(\d{1,2}):(\d{2})',  # 11:30
+            r'(\d{1,2})\.(\d{2})',  # 11.30
+            r'(\d{1,2}) uhr',       # 11 uhr
+            r'um (\d{1,2})',        # um 11
+        ]
+
+        for pattern in time_patterns:
+            match = re.search(pattern, text.lower())
+            if match:
+                if ':' in pattern or '\\.' in pattern:
+                    hour, minute = match.groups()
+                    return f"{int(hour):02d}:{int(minute):02d}"
+                else:
+                    hour = match.group(1)
+                    return f"{int(hour):02d}:00"
+        return None
+
+# Globale Context Stack Instanz
+context_stack = ContextStack()
+
 # Clinic knowledge data inline (from original backup)
 CLINIC_INFO = {
     'name': 'Zahnarztpraxis Dr. Weber',
@@ -1831,3 +1911,170 @@ async def erkennung_gespraechsende_wunsch(
     except Exception as e:
         logging.error(f"Fehler bei Gesprächsende-Erkennung: {e}")
         return "Wie kann ich Ihnen weiter helfen?"
+
+@function_tool()
+async def intelligente_grund_nachfragen(
+    context: RunContext,
+    patient_input: str
+) -> str:
+    """
+    🤔 INTELLIGENTE GRUND-NACHFRAGEN: Fragt spezifisch nach dem Grund für den Termin
+    - Wenn kein Grund angegeben: "Wieso benötigen Sie einen Termin?"
+    - Bei "Kontrolle": "Gibt es einen besonderen Grund oder nur normale Untersuchung?"
+    - Bei vagen Angaben: Spezifische Nachfragen
+
+    patient_input: Die Eingabe des Patienten
+    """
+    try:
+        input_lower = patient_input.lower()
+
+        # 1. KEIN GRUND ERKANNT - Allgemeine Nachfrage
+        if any(phrase in input_lower for phrase in [
+            'brauche einen termin', 'möchte einen termin', 'termin vereinbaren',
+            'termin buchen', 'kann ich einen termin'
+        ]) and not any(grund in input_lower for grund in [
+            'schmerz', 'weh', 'kontrolle', 'untersuchung', 'reinigung', 'implantat',
+            'krone', 'füllung', 'zahnfleisch', 'weisheitszahn', 'bleaching', 'notfall'
+        ]):
+            return "Gerne vereinbare ich einen Termin für Sie. Wieso benötigen Sie denn einen Termin?"
+
+        # 2. KONTROLLE/UNTERSUCHUNG - Spezifische Nachfrage
+        elif any(word in input_lower for word in ['kontrolle', 'untersuchung', 'check', 'vorsorge']):
+            return "Sie möchten zur Kontrolle kommen. Gibt es einen besonderen Grund oder ist es einfach eine normale Untersuchung?"
+
+        # 3. REINIGUNG - Nachfrage nach Zusätzlichem
+        elif any(word in input_lower for word in ['reinigung', 'zahnreinigung', 'prophylaxe']):
+            return "Eine professionelle Zahnreinigung, sehr gut. Soll das mit einer Kontrolle kombiniert werden?"
+
+        # 4. VAGE BEGRIFFE - Spezifische Nachfragen
+        elif any(word in input_lower for word in ['problem', 'beschwerden', 'etwas', 'schauen']):
+            return "Sie haben ein Problem. Was genau beschäftigt Sie denn?"
+
+        # 5. BEREITS SPEZIFISCH - Verwende medizinische Nachfragen
+        elif any(word in input_lower for word in [
+            'schmerz', 'schmerzen', 'weh', 'implantat', 'krone', 'füllung',
+            'weisheitszahn', 'zahnfleisch', 'blutet', 'geschwollen'
+        ]):
+            # Bereits spezifisch genug - verwende medizinische Nachfragen
+            return await medizinische_nachfragen_stellen(context, patient_input)
+
+        # 6. UNKLARE EINGABE - Höfliche Nachfrage
+        else:
+            return "Wieso benötigen Sie einen Termin?"
+
+    except Exception as e:
+        logging.error(f"Fehler bei Grund-Nachfragen: {e}")
+        return "Wieso benötigen Sie einen Termin?"
+
+@function_tool()
+async def intelligente_grund_nachfragen(
+    context: RunContext,
+    patient_input: str
+) -> str:
+    """
+    🤔 INTELLIGENTE GRUND-NACHFRAGEN: Fragt spezifisch nach dem Grund für den Termin
+    - Wenn kein Grund angegeben: "Wofür benötigen Sie einen Termin?"
+    - Bei "Kontrolle": "Gibt es einen besonderen Grund oder nur normale Untersuchung?"
+    - Bei vagen Angaben: Spezifische Nachfragen
+
+    patient_input: Die Eingabe des Patienten
+    """
+    try:
+        input_lower = patient_input.lower()
+
+        # 1. KEIN GRUND ERKANNT - Allgemeine Nachfrage
+        if any(phrase in input_lower for phrase in [
+            'brauche einen termin', 'möchte einen termin', 'termin vereinbaren',
+            'termin buchen', 'appointment', 'kann ich einen termin'
+        ]) and not any(grund in input_lower for grund in [
+            'schmerz', 'weh', 'kontrolle', 'untersuchung', 'reinigung', 'implantat',
+            'krone', 'füllung', 'zahnfleisch', 'weisheitszahn', 'bleaching', 'notfall'
+        ]):
+            return "Gerne vereinbare ich einen Termin für Sie. Wofür benötigen Sie denn den Termin? Haben Sie Beschwerden oder ist es für eine Kontrolle?"
+
+        # 2. KONTROLLE/UNTERSUCHUNG - Spezifische Nachfrage
+        elif any(word in input_lower for word in ['kontrolle', 'untersuchung', 'check', 'vorsorge']):
+            return "Verstehe, Sie möchten zur Kontrolle kommen. Gibt es einen besonderen Grund oder Beschwerden, oder ist es einfach eine normale Vorsorgeuntersuchung?"
+
+        # 3. REINIGUNG - Nachfrage nach Zusätzlichem
+        elif any(word in input_lower for word in ['reinigung', 'zahnreinigung', 'prophylaxe']):
+            return "Sehr gut, eine professionelle Zahnreinigung. Soll das mit einer Kontrolle kombiniert werden oder haben Sie zusätzliche Beschwerden?"
+
+        # 4. VAGE BEGRIFFE - Spezifische Nachfragen
+        elif any(word in input_lower for word in ['problem', 'beschwerden', 'etwas', 'schauen']):
+            return "Ich verstehe, Sie haben ein Problem. Können Sie mir sagen, was genau Sie beschäftigt? Haben Sie Schmerzen oder geht es um etwas Bestimmtes?"
+
+        # 5. ZAHNFLEISCH - Detaillierte Nachfrage
+        elif any(word in input_lower for word in ['zahnfleisch', 'blutet', 'geschwollen']):
+            return "Ach so, es geht um das Zahnfleisch. Blutet es beim Zähneputzen oder ist es geschwollen? Seit wann haben Sie das bemerkt?"
+
+        # 6. ZAHN ALLGEMEIN - Spezifische Nachfrage
+        elif any(word in input_lower for word in ['zahn', 'zähne']) and not any(word in input_lower for word in ['schmerz', 'weh']):
+            return "Es geht um einen Zahn. Haben Sie Schmerzen oder ist etwas anderes mit dem Zahn? Ist er abgebrochen oder haben Sie andere Beschwerden?"
+
+        # 7. ÄSTHETIK/AUSSEHEN - Beratungsansatz
+        elif any(word in input_lower for word in ['schön', 'aussehen', 'ästhetik', 'weiß', 'gerade']):
+            return "Sie interessieren sich für ästhetische Zahnbehandlung. Geht es um die Farbe der Zähne, die Stellung oder etwas anderes?"
+
+        # 8. KINDER - Spezielle Nachfrage
+        elif any(word in input_lower for word in ['kind', 'kinder', 'sohn', 'tochter']):
+            return "Ah, es geht um ein Kind. Wie alt ist das Kind und gibt es bestimmte Beschwerden oder ist es der erste Zahnarztbesuch?"
+
+        # 9. ANGST/NERVÖS - Einfühlsame Nachfrage
+        elif any(word in input_lower for word in ['angst', 'nervös', 'furcht', 'scared']):
+            return "Ich verstehe, dass Zahnarztbesuche manchmal Angst machen können. Wir nehmen uns gerne Zeit für Sie. Wofür benötigen Sie den Termin?"
+
+        # 10. DRINGEND/SCHNELL - Notfall-Einschätzung
+        elif any(word in input_lower for word in ['dringend', 'schnell', 'sofort', 'heute', 'morgen']):
+            return "Das klingt dringend. Haben Sie Schmerzen oder was ist passiert? Je nach Situation können wir einen Notfalltermin arrangieren."
+
+        # 11. BEREITS SPEZIFISCH - Keine weitere Nachfrage nötig
+        elif any(word in input_lower for word in [
+            'schmerz', 'schmerzen', 'weh', 'implantat', 'krone', 'füllung',
+            'weisheitszahn', 'wurzelbehandlung', 'extraktion', 'bleaching'
+        ]):
+            # Bereits spezifisch genug - verwende medizinische Nachfragen
+            return await medizinische_nachfragen_stellen(context, patient_input)
+
+        # 12. UNKLARE EINGABE - Höfliche Nachfrage
+        else:
+            return "Gerne helfe ich Ihnen weiter. Können Sie mir sagen, wofür Sie einen Termin benötigen? Haben Sie Beschwerden oder geht es um eine Kontrolle?"
+
+    except Exception as e:
+        logging.error(f"Fehler bei Grund-Nachfragen: {e}")
+        return "Gerne vereinbare ich einen Termin für Sie. Wofür benötigen Sie denn den Termin?"
+
+@function_tool()
+async def conversational_repair(
+    context: RunContext,
+    user_input: str
+) -> str:
+    """
+    🧠 SMART FALLBACK: Conversational Repair für Korrekturen
+    - Erkennt "Nein, lieber 11:30" und korrigiert letzten Terminvorschlag
+    - Stateful Dialog ohne Neustart
+
+    user_input: Korrektur-Eingabe des Patienten
+    """
+    try:
+        # Prüfe ob es eine Korrektur ist
+        correction_indicators = ["nein", "lieber", "besser", "stattdessen", "nicht", "anders"]
+
+        if any(indicator in user_input.lower() for indicator in correction_indicators):
+            # Versuche Zeit-Korrektur
+            corrected_slot = context_stack.repair_time(user_input)
+
+            if corrected_slot:
+                # Speichere korrigierten Slot
+                context_stack.set_last_slot(corrected_slot)
+
+                return f"Verstehe! Sie möchten lieber {corrected_slot['wochentag']}, {corrected_slot['datum']} um {corrected_slot['uhrzeit']} Uhr. Lassen Sie mich das für Sie prüfen."
+            else:
+                return "Entschuldigung, ich habe Ihre Korrektur nicht ganz verstanden. Können Sie mir sagen, wann Sie den Termin lieber hätten?"
+
+        # Keine Korrektur erkannt
+        return "Wie kann ich Ihnen weiter helfen?"
+
+    except Exception as e:
+        logging.error(f"Fehler bei Conversational Repair: {e}")
+        return "Entschuldigung, können Sie das nochmal sagen?"
