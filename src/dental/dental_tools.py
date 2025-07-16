@@ -7,6 +7,8 @@ from typing import Optional, Dict, List
 from enum import Enum
 import json
 import locale
+import httpx
+import asyncio
 # 🚀 PERFORMANCE BOOST: Fuzzy Times für unscharfe Zeitangaben
 FUZZY_TIMES = {
     "kurz nach 14": "14:15",
@@ -2889,3 +2891,380 @@ async def haeufige_behandlungsgruende(
     except Exception as e:
         logging.error(f"Fehler bei häufigen Behandlungsgründen: {e}")
         return "Wofür benötigen Sie denn den Termin?"
+
+# =====================================================================
+# 🏥 NEUE KALENDER-INTEGRATION: Sofia hat direkten Zugang zu Kalendar 
+# =====================================================================
+
+class KalenderClient:
+    """Client für direkten Kalender-Zugriff"""
+    
+    def __init__(self, calendar_url: str = "http://localhost:3005"):
+        self.calendar_url = calendar_url
+        self.client = httpx.AsyncClient(timeout=30.0)
+    
+    async def get_next_available(self) -> dict:
+        """Findet nächsten freien Termin"""
+        try:
+            response = await self.client.get(f"{self.calendar_url}/api/sofia/next-available")
+            return response.json()
+        except Exception as e:
+            logging.error(f"Fehler beim Abrufen des nächsten freien Termins: {e}")
+            return {"available": False, "message": "Verbindungsfehler zum Kalender"}
+    
+    async def check_date_availability(self, date: str) -> dict:
+        """Prüft Verfügbarkeit an bestimmtem Tag"""
+        try:
+            response = await self.client.get(f"{self.calendar_url}/api/sofia/check-date/{date}")
+            return response.json()
+        except Exception as e:
+            logging.error(f"Fehler beim Prüfen der Verfügbarkeit für {date}: {e}")
+            return {"available": False, "message": "Verbindungsfehler zum Kalender"}
+    
+    async def get_suggestions(self, days: int = 7, limit: int = 5) -> dict:
+        """Holt Terminvorschläge"""
+        try:
+            response = await self.client.get(f"{self.calendar_url}/api/sofia/suggest-times?days={days}&limit={limit}")
+            return response.json()
+        except Exception as e:
+            logging.error(f"Fehler beim Abrufen von Terminvorschlägen: {e}")
+            return {"suggestions": [], "message": "Verbindungsfehler zum Kalender"}
+    
+    async def get_today_appointments(self) -> dict:
+        """Holt heutige Termine"""
+        try:
+            response = await self.client.get(f"{self.calendar_url}/api/sofia/today")
+            return response.json()
+        except Exception as e:
+            logging.error(f"Fehler beim Abrufen heutiger Termine: {e}")
+            return {"appointments": [], "message": "Verbindungsfehler zum Kalender"}
+    
+    async def get_patient_appointments(self, phone: str) -> dict:
+        """Holt Termine eines Patienten"""
+        try:
+            response = await self.client.get(f"{self.calendar_url}/api/sofia/patient/{phone}")
+            return response.json()
+        except Exception as e:
+            logging.error(f"Fehler beim Abrufen der Patiententermine: {e}")
+            return {"appointments": [], "message": "Verbindungsfehler zum Kalender"}
+    
+    async def book_appointment(self, patient_name: str, patient_phone: str, 
+                             requested_date: str, requested_time: str, 
+                             treatment_type: str = None) -> dict:
+        """Bucht einen Termin über das Kalender-System"""
+        try:
+            response = await self.client.post(
+                f"{self.calendar_url}/api/sofia/appointment",
+                json={
+                    "patientName": patient_name,
+                    "patientPhone": patient_phone,
+                    "requestedDate": requested_date,
+                    "requestedTime": requested_time,
+                    "treatmentType": treatment_type or "Beratung"
+                }
+            )
+            return response.json()
+        except Exception as e:
+            logging.error(f"Fehler beim Terminbuchen: {e}")
+            return {
+                "success": False,
+                "message": "Verbindungsfehler zum Kalender-System. Bitte versuchen Sie es später erneut."
+            }
+
+# Globaler Kalender-Client
+kalender_client = KalenderClient()
+
+@function_tool()
+async def sofia_naechster_freier_termin(
+    context: RunContext
+) -> str:
+    """
+    Sofia findet automatisch den nächsten freien Termin.
+    Perfekt wenn Patienten fragen: "Wann haben Sie den nächsten freien Termin?"
+    """
+    try:
+        result = await kalender_client.get_next_available()
+        
+        if result.get("available"):
+            antwort = result["message"]
+            if "allAvailableTimes" in result and len(result["allAvailableTimes"]) > 1:
+                weitere_zeiten = ", ".join(result["allAvailableTimes"][1:4])
+                antwort += f"\n\nWeitere verfügbare Zeiten an diesem Tag: {weitere_zeiten} Uhr."
+            
+            antwort += "\n\nMöchten Sie diesen Termin buchen?"
+            
+            # CallManager Notiz
+            call_manager.add_note(f"Nächster freier Termin gefunden: {result.get('date')} um {result.get('time')}")
+            
+            return antwort
+        else:
+            return result.get("message", "Leider keine freien Termine verfügbar.")
+            
+    except Exception as e:
+        logging.error(f"Fehler bei nächstem freien Termin: {e}")
+        return "Entschuldigung, ich kann gerade nicht auf den Kalender zugreifen. Bitte rufen Sie uns direkt an."
+
+@function_tool()
+async def sofia_termin_an_bestimmtem_tag(
+    context: RunContext,
+    gewuenschtes_datum: str
+) -> str:
+    """
+    Sofia prüft Verfügbarkeit an einem bestimmten Tag.
+    Nutzen wenn Patient fragt: "Haben Sie am Freitag Zeit?" oder "Was ist am 25. Juli frei?"
+    
+    Args:
+        gewuenschtes_datum: Datum im Format YYYY-MM-DD oder deutsch (z.B. "2024-07-25")
+    """
+    try:
+        # Datum normalisieren falls nötig
+        if not re.match(r'\d{4}-\d{2}-\d{2}', gewuenschtes_datum):
+            # Versuche deutsches Datum zu parsen
+            logging.info(f"Versuche deutsches Datum zu parsen: {gewuenschtes_datum}")
+            # Hier könnte man mehr Parsing-Logik hinzufügen
+        
+        result = await kalender_client.check_date_availability(gewuenschtes_datum)
+        
+        if result.get("available"):
+            antwort = result["message"]
+            
+            # Zeige Details
+            if "availableTimes" in result:
+                verfuegbar = len(result["availableTimes"])
+                gesamt = result.get("totalSlots", 16)
+                antwort += f"\n\nVon {gesamt} möglichen Terminen sind noch {verfuegbar} frei."
+            
+            antwort += "\n\nWelche Uhrzeit würde Ihnen passen?"
+            
+        elif result.get("isWeekend"):
+            antwort = result["message"]
+            antwort += "\n\nUnsere Öffnungszeiten sind Montag bis Freitag von 8:00 bis 18:00 Uhr."
+            
+        elif result.get("isPast"):
+            antwort = result["message"]
+            # Automatisch nächsten freien Termin anbieten
+            next_result = await kalender_client.get_next_available()
+            if next_result.get("available"):
+                antwort += f"\n\n{next_result['message']}"
+                antwort += "\n\nSoll ich diesen Termin für Sie reservieren?"
+            
+        else:
+            antwort = result["message"]
+            # Alternativen anbieten
+            suggestions = await kalender_client.get_suggestions(days=14, limit=3)
+            if suggestions.get("suggestions"):
+                antwort += "\n\nIch kann Ihnen diese Alternativen anbieten:\n"
+                for i, sugg in enumerate(suggestions["suggestions"][:3], 1):
+                    antwort += f"{i}. {sugg['formattedDate']} um {sugg['time']} Uhr\n"
+                antwort += "\nWelcher Termin würde Ihnen passen?"
+        
+        # CallManager Notiz
+        call_manager.add_note(f"Verfügbarkeit geprüft für {gewuenschtes_datum}: {'verfügbar' if result.get('available') else 'nicht verfügbar'}")
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Terminprüfung für {gewuenschtes_datum}: {e}")
+        return f"Entschuldigung, ich kann die Verfügbarkeit für {gewuenschtes_datum} gerade nicht prüfen. Bitte versuchen Sie es erneut."
+
+@function_tool()
+async def sofia_terminvorschlaege_intelligent(
+    context: RunContext,
+    anzahl_tage: int = 7,
+    max_vorschlaege: int = 5
+) -> str:
+    """
+    Sofia macht intelligente Terminvorschläge.
+    Nutzen wenn Patient sagt: "Schlagen Sie mir Termine vor" oder "Was haben Sie denn frei?"
+    
+    Args:
+        anzahl_tage: Wie viele Tage in die Zukunft schauen (Standard: 7)
+        max_vorschlaege: Maximale Anzahl Vorschläge (Standard: 5)
+    """
+    try:
+        result = await kalender_client.get_suggestions(days=anzahl_tage, limit=max_vorschlaege)
+        
+        if result.get("suggestions") and len(result["suggestions"]) > 0:
+            antwort = "Gerne! Ich habe folgende Termine für Sie:\n\n"
+            
+            for i, suggestion in enumerate(result["suggestions"], 1):
+                antwort += f"**{i}. {suggestion['formattedDate']} um {suggestion['time']} Uhr**"
+                if suggestion.get("availableCount", 0) > 1:
+                    antwort += f" (noch {suggestion['availableCount']} Termine an diesem Tag verfügbar)"
+                antwort += "\n"
+            
+            antwort += "\nWelcher Termin passt Ihnen am besten? Ich reserviere ihn gerne für Sie."
+            
+        else:
+            antwort = result.get("message", f"Leider sind in den nächsten {anzahl_tage} Tagen keine Termine frei.")
+            antwort += "\n\nSoll ich in einem größeren Zeitraum schauen oder können Sie zu einem späteren Zeitpunkt anrufen?"
+        
+        # CallManager Notiz
+        call_manager.add_note(f"Terminvorschläge erstellt: {len(result.get('suggestions', []))} Optionen für {anzahl_tage} Tage")
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Terminvorschlägen: {e}")
+        return "Entschuldigung, ich kann gerade keine Terminvorschläge erstellen. Bitte rufen Sie uns direkt an."
+
+@function_tool()
+async def sofia_heutige_termine_abrufen(
+    context: RunContext
+) -> str:
+    """
+    Sofia kann heutige Termine abrufen.
+    Nutzen für interne Praxis-Anfragen oder wenn Patienten fragen ob heute viel los ist.
+    """
+    try:
+        result = await kalender_client.get_today_appointments()
+        
+        if result.get("appointments") and len(result["appointments"]) > 0:
+            count = result.get("count", len(result["appointments"]))
+            antwort = f"Heute haben wir {count} Termine geplant:\n\n"
+            antwort += result.get("message", "")
+            
+        else:
+            antwort = result.get("message", "Heute sind keine Termine geplant.")
+        
+        # CallManager Notiz  
+        call_manager.add_note(f"Heutige Termine abgerufen: {result.get('count', 0)} Termine")
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler beim Abrufen heutiger Termine: {e}")
+        return "Entschuldigung, ich kann die heutigen Termine gerade nicht abrufen."
+
+@function_tool()
+async def sofia_meine_termine_finden_erweitert(
+    context: RunContext,
+    telefonnummer: str
+) -> str:
+    """
+    Sofia findet Termine eines Patienten über Telefonnummer.
+    Erweiterte Version mit direktem Kalender-Zugriff.
+    
+    Args:
+        telefonnummer: Telefonnummer des Patienten
+    """
+    try:
+        # Telefonnummer normalisieren
+        phone_clean = re.sub(r'[^\d+]', '', telefonnummer)
+        
+        result = await kalender_client.get_patient_appointments(phone_clean)
+        
+        if result.get("appointments") and len(result["appointments"]) > 0:
+            count = result.get("count", len(result["appointments"]))
+            antwort = f"Ich habe {count} Termine für Sie gefunden:\n\n"
+            antwort += result.get("message", "")
+            
+            antwort += "\n\nMöchten Sie einen Termin ändern oder haben Sie weitere Fragen?"
+            
+        else:
+            antwort = result.get("message", "Sie haben aktuell keine Termine bei uns.")
+            antwort += "\n\nMöchten Sie einen neuen Termin vereinbaren?"
+        
+        # CallManager Notiz
+        call_manager.add_note(f"Termine für Patient abgerufen (Tel: {phone_clean}): {result.get('count', 0)} gefunden")
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler beim Abrufen der Patiententermine: {e}")
+        return "Entschuldigung, ich kann Ihre Termine gerade nicht abrufen. Bitte versuchen Sie es erneut."
+
+@function_tool()
+async def termin_buchen_calendar_system(
+    context: RunContext,
+    patient_name: str,
+    phone: str,
+    appointment_date: str,
+    appointment_time: str,
+    treatment_type: str = "Kontrolluntersuchung"
+) -> str:
+    """
+    🏥 NEUE CALENDAR INTEGRATION: Bucht Termine direkt im Calendar System
+    Diese Funktion ersetzt die alten Terminbuchungsmethoden und sorgt dafür,
+    dass alle Termine sofort im visuellen Kalender angezeigt werden.
+    
+    Args:
+        patient_name: Vollständiger Name des Patienten
+        phone: Telefonnummer für Kontakt  
+        appointment_date: Datum im Format YYYY-MM-DD
+        appointment_time: Uhrzeit im Format HH:MM
+        treatment_type: Art der Behandlung
+    """
+    try:
+        # Telefonnummer normalisieren
+        phone_clean = re.sub(r'[^\d+]', '', phone)
+        if not phone_clean.startswith('+'):
+            if phone_clean.startswith('0'):
+                phone_clean = '+49' + phone_clean[1:]
+            else:
+                phone_clean = '+49' + phone_clean
+        
+        # Datum validieren
+        try:
+            datetime.strptime(appointment_date, '%Y-%m-%d')
+        except ValueError:
+            return "❌ Ungültiges Datumsformat. Bitte verwenden Sie YYYY-MM-DD."
+        
+        # Zeit validieren
+        try:
+            datetime.strptime(appointment_time, '%H:%M')
+        except ValueError:
+            return "❌ Ungültiges Zeitformat. Bitte verwenden Sie HH:MM."
+        
+        # Terminbuchung über Calendar System
+        logging.info(f"🏥 CALENDAR BOOKING: {patient_name} für {appointment_date} {appointment_time}")
+        result = await kalender_client.book_appointment(
+            patient_name=patient_name,
+            patient_phone=phone_clean,
+            requested_date=appointment_date,
+            requested_time=appointment_time,
+            treatment_type=treatment_type
+        )
+        
+        if result.get("success"):
+            antwort = f"✅ **Termin erfolgreich gebucht!**\n\n"
+            antwort += f"👤 **Patient:** {patient_name}\n"
+            antwort += f"📅 **Datum:** {appointment_date}\n" 
+            antwort += f"🕐 **Uhrzeit:** {appointment_time}\n"
+            antwort += f"🦷 **Behandlung:** {treatment_type}\n"
+            antwort += f"📞 **Telefon:** {phone_clean}\n\n"
+            antwort += "🏥 **Der Termin erscheint sofort in unserem Kalender!**\n"
+            antwort += "📧 Sie erhalten eine Bestätigung per SMS/E-Mail.\n"
+            antwort += "🔔 Wir erinnern Sie einen Tag vorher an Ihren Termin."
+            
+            # CallManager Notiz
+            call_manager.add_note(f"Termin gebucht via Calendar: {patient_name} am {appointment_date} {appointment_time}")
+            
+            logging.info(f"✅ SUCCESS: Termin gebucht für {patient_name} am {appointment_date} {appointment_time}")
+            return antwort
+        else:
+            error_msg = result.get("message", "Unbekannter Fehler")
+            antwort = f"❌ **Terminbuchung fehlgeschlagen:**\n\n"
+            antwort += f"📋 **Grund:** {error_msg}\n\n"
+            
+            if "bereits vergeben" in error_msg or "taken" in error_msg:
+                antwort += "🔄 **Lass mich Alternativen für Sie finden...**\n"
+                # Hole alternative Termine
+                suggestions = await kalender_client.get_suggestions(days=14, limit=3)
+                if suggestions.get("suggestions"):
+                    antwort += "\n✨ **Alternative Termine:**\n"
+                    for i, sugg in enumerate(suggestions["suggestions"][:3], 1):
+                        antwort += f"{i}. {sugg['formattedDate']} um {sugg['time']} Uhr\n"
+                    antwort += "\n💬 Welcher Termin würde Ihnen passen?"
+                else:
+                    antwort += "\n📞 Bitte rufen Sie uns an, damit wir einen passenden Termin finden."
+            
+            # CallManager Notiz
+            call_manager.add_note(f"Terminbuchung fehlgeschlagen: {error_msg}")
+            
+            logging.warning(f"❌ BOOKING FAILED: {patient_name} - {error_msg}")
+            return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei termin_buchen_calendar_system: {e}")
+        return f"❌ **Systemfehler:** Es gab ein technisches Problem bei der Terminbuchung. Bitte rufen Sie uns direkt an: 030 12345678"

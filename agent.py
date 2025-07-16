@@ -8,8 +8,8 @@ from livekit.plugins import (
     noise_cancellation,
 )
 from livekit.plugins import google
-from src.prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
-from src.dental_tools import (
+from src.agent.prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
+from src.dental.dental_tools import (
     schedule_appointment,
     check_availability,
     get_clinic_info,
@@ -48,6 +48,12 @@ from src.dental_tools import (
     notiz_hinzufuegen,
     gespraech_status,
     get_zeitabhaengige_begruessung,
+    sofia_naechster_freier_termin,
+    sofia_termin_an_bestimmtem_tag,
+    sofia_terminvorschlaege_intelligent,
+    sofia_heutige_termine_abrufen,
+    sofia_meine_termine_finden_erweitert,
+    termin_buchen_calendar_system,  # NEW: Calendar integration booking
     call_manager  # Import the call manager
 )
 
@@ -105,7 +111,13 @@ class DentalReceptionist(Agent):
                 gespraech_beenden,
                 notiz_hinzufuegen,
                 gespraech_status,
-                get_zeitabhaengige_begruessung
+                get_zeitabhaengige_begruessung,
+                sofia_naechster_freier_termin,
+                sofia_termin_an_bestimmtem_tag,
+                sofia_terminvorschlaege_intelligent,
+                sofia_heutige_termine_abrufen,
+                sofia_meine_termine_finden_erweitert,
+                termin_buchen_calendar_system  # NEW: Calendar integration booking
             ],
         )
         self.should_end_conversation = False
