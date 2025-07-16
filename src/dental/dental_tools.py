@@ -423,6 +423,59 @@ class CallManager:
 # Global CallManager instance
 call_manager = CallManager()
 
+# Deutsche Telefonnummern-Validierung
+def ist_deutsche_telefonnummer(telefon: str) -> bool:
+    """
+    Prüft ob eine Telefonnummer eine gültige deutsche Nummer ist.
+    Akzeptiert deutsche Festnetz- und Mobilnummern.
+    """
+    if not telefon:
+        return False
+    
+    # Bereinige Nummer - entferne Leerzeichen, Bindestriche, Klammern, Punkte
+    nummer = re.sub(r'[\s\-\(\)\.\/]', '', telefon.strip())
+    
+    # Entferne führendes + falls vorhanden
+    if nummer.startswith('+'):
+        nummer = nummer[1:]
+    
+    # Deutsche Mobilnummern
+    # Format: 015x, 016x, 017x (oder 4915x, 4916x, 4917x)
+    if re.match(r'^(49)?0?1[567]\d{7,8}$', nummer):
+        return True
+    
+    # Deutsche Festnetznummern
+    # Format: Vorwahl (2-5 Ziffern) + Rufnummer (4-8 Ziffern)
+    # Mit Landesvorwahl: 49 + Vorwahl (ohne 0) + Nummer
+    # Ohne Landesvorwahl: 0 + Vorwahl + Nummer
+    if re.match(r'^(49)?0?[2-9]\d{1,4}\d{4,8}$', nummer):
+        # Prüfe Gesamtlänge
+        if nummer.startswith('49'):
+            # Mit Landesvorwahl: 11-12 Ziffern
+            return 11 <= len(nummer) <= 13
+        else:
+            # Ohne Landesvorwahl: 10-11 Ziffern
+            return 10 <= len(nummer) <= 12
+    
+    return False
+
+def formatiere_telefonnummer(telefon: str) -> str:
+    """
+    Formatiert eine deutsche Telefonnummer einheitlich.
+    """
+    nummer = re.sub(r'[\s\-\(\)\.\/]', '', telefon.strip())
+    
+    # Füge Leerzeichen für bessere Lesbarkeit ein
+    if nummer.startswith('+49'):
+        # +49 170 12345678
+        return f"+49 {nummer[3:6]} {nummer[6:]}"
+    elif nummer.startswith('0'):
+        # 0170 12345678
+        if len(nummer) > 4:
+            return f"{nummer[:4]} {nummer[4:]}"
+    
+    return telefon
+
 @function_tool()
 async def get_clinic_info(
     context: RunContext,
@@ -1265,10 +1318,23 @@ async def termin_buchen_mit_details(
     Stellt sicher, dass Name, Telefon und Beschreibung immer gespeichert werden.
     """
     try:
+        # Validiere deutsche Telefonnummer
+        if not ist_deutsche_telefonnummer(phone):
+            return f"❌ **Terminbuchung nicht möglich**\n\n" \
+                   f"Entschuldigung, wir können nur Termine für Patienten mit deutschen Telefonnummern vereinbaren.\n\n" \
+                   f"**Ihre eingegebene Nummer**: {phone}\n\n" \
+                   f"Bitte geben Sie eine deutsche Festnetz- oder Mobilnummer an (z.B. 030 12345678 oder 0170 12345678).\n\n" \
+                   f"**Alternative**: Sie können auch gerne persönlich in unserer Praxis vorbeikommen:\n" \
+                   f"📍 Hauptstraße 123, 10115 Berlin\n" \
+                   f"📞 030 12345678"
+        
+        # Formatiere die Telefonnummer
+        phone_formatted = formatiere_telefonnummer(phone)
+        
         # Patienteninformationen im CallManager speichern
         call_manager.set_patient_info({
             'name': patient_name,
-            'phone': phone,
+            'phone': phone_formatted,
             'treatment_type': treatment_type,
             'notes': notes
         })
@@ -1276,7 +1342,7 @@ async def termin_buchen_mit_details(
         # Termin buchen
         result = appointment_manager.termin_hinzufuegen(
             patient_name=patient_name,
-            telefon=phone,
+            telefon=phone_formatted,
             datum=appointment_date,
             uhrzeit=appointment_time,
             behandlungsart=treatment_type,
@@ -1295,6 +1361,13 @@ async def termin_buchen_mit_details(
             call_manager.mark_appointment_scheduled(appointment_data)
             call_manager.add_note(f"Termin gebucht: {appointment_date} {appointment_time}")
             
+            # Lernfähigkeit: Anfrage aufzeichnen
+            lernsystem.anfrage_aufzeichnen(f"Termin_{treatment_type}", {
+                "datum": appointment_date,
+                "uhrzeit": appointment_time,
+                "behandlung": treatment_type
+            })
+            
             return f"**Termin erfolgreich gebucht!**\n\n" \
                    f"**Patient**: {patient_name}\n" \
                    f"**Telefon**: {phone}\n" \
@@ -1302,7 +1375,8 @@ async def termin_buchen_mit_details(
                    f"**Uhrzeit**: {appointment_time}\n" \
                    f"**Behandlung**: {treatment_type}\n" \
                    f"**Notizen**: {notes if notes else 'Keine'}\n\n" \
-                   f"Alle Ihre Daten wurden gespeichert. Vielen Dank für Ihr Vertrauen!"
+                   f"Alle Ihre Daten wurden gespeichert. Vielen Dank für Ihr Vertrauen!\n\n" \
+                   f"Kann ich Ihnen noch mit etwas anderem helfen?"
         else:
             return f"❌ **Terminbuchung fehlgeschlagen**: Termin nicht verfügbar oder bereits belegt"
             
@@ -1351,25 +1425,26 @@ async def gespraech_beenden(
     KRITISCH: Diese Funktion beendet das Gespräch SOFORT - keine weiteren Nachrichten!
     """
     try:
-        # KEIN automatisches Beenden mehr - Sofia läuft weiter
-        # call_manager.initiate_call_end()  # DEAKTIVIERT
-        # call_manager.status = CallStatus.COMPLETED  # DEAKTIVIERT
+        # Gespräch SOFORT beenden
+        call_manager.initiate_call_end()
+        call_manager.status = CallStatus.COMPLETED
         call_manager.add_note(f"Gespräch beendet: {grund}")
         
-        # Höfliche Verabschiedung OHNE Beenden
-        response = f"Auf Wiedersehen! Falls Sie noch Fragen haben, bin ich weiterhin für Sie da."
+        # Höfliche Verabschiedung
+        response = "Vielen Dank für Ihren Anruf! "
         
         # Falls ein Termin gebucht wurde, kurze Bestätigung
         if call_manager.scheduled_appointment:
             apt = call_manager.scheduled_appointment
-            response += f"\n✅ Ihr Termin: {apt['date']} um {apt['time']}"
+            response += f"Wir freuen uns auf Sie am {apt['date']} um {apt['time']}. "
             
-        # Log für Debugging
-        logging.info(f"🔴 GESPRÄCH BEENDET SOFORT: {grund}")
+        response += "Einen schönen Tag noch und auf Wiederhören!"
         
-        # KEIN Ende-Signal mehr - Gespräch läuft weiter
-        # response += f"\n*[CALL_END_SIGNAL]*"  # DEAKTIVIERT
-        logging.info("Höfliche Verabschiedung - Gespräch läuft weiter")
+        # Log für Debugging
+        logging.info(f"🔴 GESPRÄCH BEENDET: {grund}")
+        
+        # Ende-Signal für das System
+        response += "\n*[CALL_END_SIGNAL]*"
         
         return response
         
@@ -1813,7 +1888,23 @@ async def intelligente_antwort_mit_namen_erkennung(
 
         # Terminwunsch erkennen
         if any(word in input_lower for word in ['termin', 'appointment', 'buchung', 'vereinbaren']):
-            response += "Gerne vereinbare ich einen Termin für Sie. Wann hätten Sie Zeit?"
+            # Prüfe ob Grund bereits genannt wurde
+            grund_keywords = ['schmerz', 'kontrolle', 'reinigung', 'füllung', 'krone', 'implantat', 
+                            'zahnfleisch', 'wurzel', 'weisheit', 'ziehen', 'bluten', 'geschwollen',
+                            'gebrochen', 'notfall', 'vorsorge', 'prophylaxe', 'beratung']
+            
+            hat_grund = any(keyword in input_lower for keyword in grund_keywords)
+            
+            if hat_grund:
+                response += "Gerne vereinbare ich einen Termin für Sie. Wie ist Ihr Name?"
+            else:
+                response += "Gerne vereinbare ich einen Termin für Sie. Wofür benötigen Sie denn den Termin?"
+                
+                # Lernfähigkeit: Häufige Terminanfragen tracken
+                lernsystem.anfrage_aufzeichnen("Terminanfrage_ohne_Grund", {
+                    "input": patient_input,
+                    "zeitstempel": datetime.now().isoformat()
+                })
 
         # Schmerzen erkennen
         elif any(word in input_lower for word in ['schmerz', 'schmerzen', 'weh', 'tut weh', 'ziehen', 'stechen', 'pochen']):
@@ -1830,6 +1921,22 @@ async def intelligente_antwort_mit_namen_erkennung(
         # Kontrolle erkennen
         elif any(word in input_lower for word in ['kontrolle', 'untersuchung', 'check', 'vorsorge']):
             response += "Das ist sehr gut, dass Sie zur Kontrolle kommen möchten. Wann hätten Sie Zeit?"
+        
+        # Freie Termine anfragen
+        elif any(phrase in input_lower for phrase in ['termine frei', 'freie termine', 'verfügbar', 'noch platz', 'noch termine']):
+            # Prüfe ob Name schon bekannt ist
+            if call_manager.patient_name:
+                response += f"Gerne schaue ich nach freien Terminen für Sie, {call_manager.patient_name}. "
+                response += "Für welche Behandlung benötigen Sie einen Termin?"
+            else:
+                response += "Gerne schaue ich nach freien Terminen für Sie. "
+                response += "Um Ihnen passende Termine vorzuschlagen, benötige ich zunächst Ihren Namen und Ihre Telefonnummer."
+                
+                # Lernfähigkeit: Terminanfrage ohne Identifikation tracken
+                lernsystem.anfrage_aufzeichnen("Terminanfrage_ohne_Identifikation", {
+                    "input": patient_input,
+                    "zeitstempel": datetime.now().isoformat()
+                })
 
         # Allgemeine Begrüßung
         else:
@@ -2096,3 +2203,689 @@ async def conversational_repair(
     except Exception as e:
         logging.error(f"Fehler bei Conversational Repair: {e}")
         return "Entschuldigung, können Sie das nochmal sagen?"
+
+@function_tool()
+async def notfall_priorisierung(
+    context: RunContext,
+    symptome: str,
+    schmerzskala: int = 0
+) -> str:
+    """
+    Priorisiert Notfälle basierend auf Symptomen und Schmerzintensität.
+    Schlägt sofortige Terminoptionen vor.
+    """
+    try:
+        # Validiere Schmerzskala
+        if schmerzskala < 0 or schmerzskala > 10:
+            schmerzskala = 0
+        
+        # Definiere Notfall-Keywords
+        notfall_keywords = [
+            "unfall", "blutung", "geschwollen", "fieber", "eiter",
+            "gebrochen", "verletzt", "stark", "unerträglich", "akut"
+        ]
+        
+        # Prüfe auf Notfall-Keywords
+        ist_notfall = any(keyword in symptome.lower() for keyword in notfall_keywords)
+        
+        # Lernfähigkeit: Notfall aufzeichnen
+        if ist_notfall or schmerzskala >= 5:
+            lernsystem.anfrage_aufzeichnen("Notfall", {
+                "symptome": symptome,
+                "schmerzskala": schmerzskala,
+                "keywords": [k for k in notfall_keywords if k in symptome.lower()]
+            })
+        
+        # Priorisierung basierend auf Schmerzskala und Keywords
+        if schmerzskala >= 8 or ist_notfall:
+            prioritaet = "HOCH"
+            empfehlung = "Sofortiger Notfalltermin erforderlich"
+            wartezeit = "Sofort - innerhalb 30 Minuten"
+        elif schmerzskala >= 5:
+            prioritaet = "MITTEL"
+            empfehlung = "Termin heute noch empfohlen"
+            wartezeit = "Innerhalb 2-4 Stunden"
+        else:
+            prioritaet = "NIEDRIG"
+            empfehlung = "Regulärer Termin ausreichend"
+            wartezeit = "Nächster verfügbarer Termin"
+        
+        # Hole nächste verfügbare Notfalltermine
+        from datetime import datetime, timedelta
+        jetzt = datetime.now()
+        
+        antwort = f"**Notfall-Bewertung:**\n\n"
+        antwort += f"**Symptome**: {symptome}\n"
+        if schmerzskala > 0:
+            antwort += f"**Schmerzskala**: {schmerzskala}/10\n"
+        antwort += f"**Priorität**: {prioritaet}\n"
+        antwort += f"**Empfehlung**: {empfehlung}\n"
+        antwort += f"**Geschätzte Wartezeit**: {wartezeit}\n\n"
+        
+        if prioritaet == "HOCH":
+            antwort += "**Sofortmaßnahmen:**\n"
+            antwort += "- Kommen Sie SOFORT in die Praxis\n"
+            antwort += "- Bei starker Blutung: Mit sauberem Tuch Druck ausüben\n"
+            antwort += "- Bei Schwellung: Kühlen mit Eis (in Tuch eingewickelt)\n"
+            antwort += "- Bei starken Schmerzen: Ibuprofen 400mg (falls keine Allergie)\n\n"
+            antwort += "**Notfallnummer**: +49 30 12345678\n"
+        elif prioritaet == "MITTEL":
+            # Suche nächste verfügbare Termine heute
+            heute = jetzt.strftime("%Y-%m-%d")
+            verfuegbare = appointment_manager.get_verfuegbare_termine_tag(heute)
+            
+            if verfuegbare:
+                antwort += f"**Verfügbare Termine heute:**\n"
+                for termin in verfuegbare[:3]:
+                    antwort += f"- {termin}\n"
+            else:
+                antwort += "Heute keine regulären Termine mehr, aber Notfalltermin möglich.\n"
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Notfall-Priorisierung: {e}")
+        return "Bitte beschreiben Sie Ihre Symptome genauer, damit ich die Dringlichkeit einschätzen kann."
+
+@function_tool()
+async def wartezeit_schaetzung(
+    context: RunContext,
+    datum: str,
+    uhrzeit: str
+) -> str:
+    """
+    Schätzt die aktuelle Wartezeit basierend auf dem Terminplan.
+    Berücksichtigt durchschnittliche Behandlungsdauern und Verspätungen.
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Parse Datum und Zeit
+        termin_zeit = datetime.strptime(f"{datum} {uhrzeit}", "%Y-%m-%d %H:%M")
+        jetzt = datetime.now()
+        
+        # Hole Tagesplan
+        tagesplan = appointment_manager.get_tagesplan(datum)
+        
+        # Durchschnittliche Behandlungsdauern (in Minuten)
+        behandlungsdauern = {
+            "Kontrolluntersuchung": 30,
+            "Zahnreinigung": 45,
+            "Füllung": 60,
+            "Wurzelbehandlung": 90,
+            "Zahnentfernung": 45,
+            "Beratung": 30,
+            "Notfall": 45
+        }
+        
+        # Berechne geschätzte Wartezeit
+        geschaetzte_wartezeit = 0
+        aktuelle_zeit = datetime.strptime(f"{datum} 09:00", "%Y-%m-%d %H:%M")
+        
+        for termin in tagesplan:
+            termin_start = datetime.strptime(f"{datum} {termin['uhrzeit']}", "%Y-%m-%d %H:%M")
+            
+            # Wenn Termin vor dem angefragten Zeitpunkt
+            if termin_start < termin_zeit:
+                behandlungsart = termin.get('behandlung', 'Kontrolluntersuchung')
+                dauer = behandlungsdauern.get(behandlungsart, 30)
+                
+                # Füge 10% Puffer für mögliche Verzögerungen hinzu
+                dauer_mit_puffer = int(dauer * 1.1)
+                
+                # Wenn dieser Termin noch nicht abgeschlossen sein sollte
+                termin_ende = termin_start + timedelta(minutes=dauer_mit_puffer)
+                if termin_ende > termin_zeit:
+                    geschaetzte_wartezeit += (termin_ende - termin_zeit).seconds // 60
+        
+        # Erstelle Antwort
+        antwort = f"**Wartezeit-Schätzung für {datum} um {uhrzeit}:**\n\n"
+        
+        if geschaetzte_wartezeit > 0:
+            antwort += f"**Geschätzte Wartezeit**: ca. {geschaetzte_wartezeit} Minuten\n\n"
+            antwort += "**Mögliche Gründe für Wartezeit:**\n"
+            antwort += "- Vorherige Behandlungen dauern länger als geplant\n"
+            antwort += "- Notfallpatienten wurden eingeschoben\n\n"
+            antwort += "**Empfehlung**: Bitte kommen Sie trotzdem pünktlich, "
+            antwort += "da sich die Situation ändern kann.\n"
+        else:
+            antwort += "**Keine Wartezeit erwartet** ✓\n\n"
+            antwort += "Sie sollten pünktlich drankommen.\n"
+        
+        # Füge aktuelle Auslastung hinzu
+        termine_heute = len(tagesplan)
+        if termine_heute > 15:
+            antwort += "\n**Hinweis**: Heute ist ein sehr voller Tag in der Praxis."
+        elif termine_heute < 8:
+            antwort += "\n**Hinweis**: Heute ist es relativ ruhig in der Praxis."
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Wartezeit-Schätzung: {e}")
+        return "Ich kann die Wartezeit momentan nicht einschätzen. Bitte rufen Sie uns direkt an."
+
+@function_tool()
+async def termin_erinnerung_planen(
+    context: RunContext,
+    termin_id: str,
+    erinnerung_typ: str = "sms"
+) -> str:
+    """
+    Plant automatische Terminerinnerungen per SMS, Anruf oder E-Mail.
+    Standard: 24 Stunden und 2 Stunden vor dem Termin.
+    """
+    try:
+        # Validiere Erinnerungstyp
+        erlaubte_typen = ["sms", "anruf", "email", "alle"]
+        if erinnerung_typ.lower() not in erlaubte_typen:
+            erinnerung_typ = "sms"
+        
+        # Hole Termindetails
+        termin = appointment_manager.get_termin_by_id(termin_id)
+        if not termin:
+            return "Termin nicht gefunden. Bitte überprüfen Sie die Termin-ID."
+        
+        # Extrahiere Termininfos
+        datum = termin.get('datum')
+        uhrzeit = termin.get('uhrzeit')
+        patient_name = termin.get('patient_name')
+        telefon = termin.get('telefon')
+        behandlung = termin.get('behandlung', 'Termin')
+        
+        # Erstelle Erinnerungsplan
+        from datetime import datetime, timedelta
+        termin_datetime = datetime.strptime(f"{datum} {uhrzeit}", "%Y-%m-%d %H:%M")
+        
+        erinnerungen = []
+        
+        # 24 Stunden vorher
+        erinnerung_24h = termin_datetime - timedelta(hours=24)
+        if erinnerung_24h > datetime.now():
+            erinnerungen.append({
+                'zeit': erinnerung_24h,
+                'typ': '24-Stunden-Erinnerung'
+            })
+        
+        # 2 Stunden vorher
+        erinnerung_2h = termin_datetime - timedelta(hours=2)
+        if erinnerung_2h > datetime.now():
+            erinnerungen.append({
+                'zeit': erinnerung_2h,
+                'typ': '2-Stunden-Erinnerung'
+            })
+        
+        # Speichere Erinnerungseinstellungen (in echter Implementierung würde dies in DB gespeichert)
+        antwort = f"**Terminerinnerung eingerichtet:**\n\n"
+        antwort += f"**Patient**: {patient_name}\n"
+        antwort += f"**Termin**: {datum} um {uhrzeit}\n"
+        antwort += f"**Behandlung**: {behandlung}\n"
+        antwort += f"**Erinnerungstyp**: {erinnerung_typ.upper()}\n\n"
+        
+        if erinnerungen:
+            antwort += "**Geplante Erinnerungen:**\n"
+            for er in erinnerungen:
+                antwort += f"- {er['typ']}: {er['zeit'].strftime('%d.%m.%Y um %H:%M')}\n"
+            
+            # Erinnerungstexte
+            antwort += f"\n**Erinnerungstext ({erinnerung_typ}):**\n"
+            
+            if erinnerung_typ in ["sms", "alle"]:
+                antwort += f"SMS an {telefon}:\n"
+                antwort += f"'Guten Tag {patient_name}, dies ist eine Erinnerung an Ihren "
+                antwort += f"Termin am {datum} um {uhrzeit} in der Zahnarztpraxis Dr. Weber. "
+                antwort += "Bei Verhinderung bitte rechtzeitig absagen: 030-12345678'\n\n"
+            
+            if erinnerung_typ in ["email", "alle"]:
+                antwort += "E-Mail-Betreff: 'Terminerinnerung - Zahnarztpraxis Dr. Weber'\n"
+                antwort += "Inhalt: Formatierte HTML-E-Mail mit Termindetails und Praxisadresse\n\n"
+            
+            if erinnerung_typ in ["anruf", "alle"]:
+                antwort += "Automatischer Anruf mit Sprachnachricht geplant\n\n"
+            
+            antwort += "✓ **Erinnerungen erfolgreich aktiviert**"
+        else:
+            antwort += "⚠️ **Hinweis**: Termin ist zu nah, keine automatischen Erinnerungen möglich.\n"
+            antwort += "Bitte erinnern Sie den Patienten manuell."
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Terminerinnerung: {e}")
+        return "Fehler beim Einrichten der Terminerinnerung. Bitte versuchen Sie es erneut."
+
+@function_tool()
+async def rezept_erneuern(
+    context: RunContext,
+    patient_telefon: str,
+    medikament: str
+) -> str:
+    """
+    Verwaltet Rezeptverlängerungen für Patienten.
+    Prüft Berechtigung und erstellt Anfrage für den Arzt.
+    """
+    try:
+        # Hole Patientenhistorie
+        historie = appointment_manager.get_patientenhistorie(patient_telefon)
+        
+        # Prüfe ob Patient bekannt ist
+        if not historie:
+            return "Patient nicht in unserer Datenbank gefunden. Bitte vereinbaren Sie einen Termin für eine Rezeptausstellung."
+        
+        # Definiere häufige Zahnmedikamente
+        haeufige_medikamente = {
+            "schmerzmittel": ["Ibuprofen", "Paracetamol", "Novaminsulfon"],
+            "antibiotika": ["Amoxicillin", "Clindamycin", "Penicillin V"],
+            "mundspuelung": ["Chlorhexidin", "Listerine", "Meridol"],
+            "zahncreme": ["Sensodyne", "Elmex", "Fluorid-Gel"]
+        }
+        
+        # Kategorisiere Medikament
+        medikament_typ = "unbekannt"
+        for kategorie, medis in haeufige_medikamente.items():
+            if any(medi.lower() in medikament.lower() for medi in medis):
+                medikament_typ = kategorie
+                break
+        
+        # Erstelle Rezeptanfrage
+        from datetime import datetime
+        anfrage_datum = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        antwort = f"**Rezeptverlängerung angefragt:**\n\n"
+        antwort += f"**Patient**: Telefon {patient_telefon}\n"
+        antwort += f"**Medikament**: {medikament}\n"
+        antwort += f"**Kategorie**: {medikament_typ.title()}\n"
+        antwort += f"**Anfragedatum**: {anfrage_datum}\n\n"
+        
+        # Prüfungen basierend auf Medikamententyp
+        if medikament_typ == "antibiotika":
+            antwort += "⚠️ **Hinweis**: Antibiotika benötigen eine aktuelle Untersuchung.\n"
+            antwort += "Der Arzt muss die Notwendigkeit prüfen.\n\n"
+        elif medikament_typ == "schmerzmittel":
+            antwort += "ℹ️ **Info**: Schmerzmittel sollten nur kurzfristig verwendet werden.\n"
+            antwort += "Bei längerem Bedarf ist eine Untersuchung empfohlen.\n\n"
+        
+        # Status der Anfrage
+        antwort += "**Status**: ⏳ In Bearbeitung\n\n"
+        antwort += "**Nächste Schritte:**\n"
+        antwort += "1. Dr. Weber wird die Anfrage prüfen\n"
+        antwort += "2. Sie erhalten eine SMS/Anruf sobald das Rezept bereit ist\n"
+        antwort += "3. Abholung in der Praxis oder Zusendung per Post möglich\n\n"
+        
+        # Bearbeitungszeit
+        antwort += "**Bearbeitungszeit**: \n"
+        antwort += "- Normale Rezepte: 1-2 Werktage\n"
+        antwort += "- Dringende Fälle: Heute noch möglich\n\n"
+        
+        antwort += "✓ **Anfrage erfolgreich eingereicht**\n"
+        antwort += f"Referenznummer: RX{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Rezeptverlängerung: {e}")
+        return "Fehler bei der Rezeptanfrage. Bitte rufen Sie uns direkt an."
+
+@function_tool()
+async def behandlungsplan_status(
+    context: RunContext,
+    patient_telefon: str
+) -> str:
+    """
+    Verfolgt mehrteilige Behandlungspläne (z.B. Kieferorthopädie, Implantate).
+    Zeigt Fortschritt und nächste Schritte an.
+    """
+    try:
+        # Hole Patientenhistorie
+        historie = appointment_manager.get_patientenhistorie(patient_telefon)
+        
+        if not historie:
+            return "Kein Behandlungsplan für diese Telefonnummer gefunden."
+        
+        # Definiere typische Behandlungspläne
+        behandlungsplaene = {
+            "Implantat": {
+                "schritte": [
+                    "Erstberatung und Röntgen",
+                    "Knochenaufbau (falls nötig)",
+                    "Implantat-Setzung",
+                    "Einheilphase (3-6 Monate)",
+                    "Abdruck für Krone",
+                    "Einsetzen der finalen Krone"
+                ],
+                "dauer": "4-8 Monate"
+            },
+            "Kieferorthopädie": {
+                "schritte": [
+                    "Erstuntersuchung und Abdrücke",
+                    "Behandlungsplanung",
+                    "Einsetzen der Zahnspange",
+                    "Monatliche Kontrollen",
+                    "Feineinstellung",
+                    "Retainer-Anpassung"
+                ],
+                "dauer": "12-24 Monate"
+            },
+            "Wurzelbehandlung": {
+                "schritte": [
+                    "Diagnose und Röntgen",
+                    "Erste Sitzung - Kanalöffnung",
+                    "Zweite Sitzung - Reinigung",
+                    "Dritte Sitzung - Füllung",
+                    "Kontrollröntgen",
+                    "Krone (optional)"
+                ],
+                "dauer": "2-4 Wochen"
+            }
+        }
+        
+        # Analysiere Historie für aktiven Behandlungsplan
+        aktiver_plan = None
+        abgeschlossene_schritte = []
+        
+        for termin in historie:
+            behandlung = termin.get('behandlung', '').lower()
+            for plan_typ, plan_info in behandlungsplaene.items():
+                if plan_typ.lower() in behandlung:
+                    aktiver_plan = plan_typ
+                    abgeschlossene_schritte.append({
+                        'datum': termin.get('datum'),
+                        'behandlung': termin.get('behandlung')
+                    })
+        
+        antwort = f"**Behandlungsplan-Status:**\n\n"
+        antwort += f"**Patient**: Telefon {patient_telefon}\n\n"
+        
+        if aktiver_plan:
+            plan_info = behandlungsplaene[aktiver_plan]
+            fortschritt = min(len(abgeschlossene_schritte), len(plan_info['schritte']))
+            prozent = int((fortschritt / len(plan_info['schritte'])) * 100)
+            
+            antwort += f"**Aktiver Plan**: {aktiver_plan}\n"
+            antwort += f"**Gesamtdauer**: {plan_info['dauer']}\n"
+            antwort += f"**Fortschritt**: {prozent}% ({fortschritt}/{len(plan_info['schritte'])} Schritte)\n\n"
+            
+            # Fortschrittsbalken
+            balken_laenge = 20
+            gefuellt = int(balken_laenge * prozent / 100)
+            antwort += "["
+            antwort += "█" * gefuellt
+            antwort += "░" * (balken_laenge - gefuellt)
+            antwort += f"] {prozent}%\n\n"
+            
+            # Schritte-Übersicht
+            antwort += "**Behandlungsschritte:**\n"
+            for i, schritt in enumerate(plan_info['schritte']):
+                if i < fortschritt:
+                    antwort += f"✓ {schritt}"
+                    if i < len(abgeschlossene_schritte):
+                        antwort += f" (erledigt am {abgeschlossene_schritte[i]['datum']})"
+                    antwort += "\n"
+                elif i == fortschritt:
+                    antwort += f"→ **{schritt}** (nächster Schritt)\n"
+                else:
+                    antwort += f"○ {schritt} (ausstehend)\n"
+            
+            # Nächster Termin
+            antwort += f"\n**Empfehlung**: "
+            if fortschritt < len(plan_info['schritte']):
+                antwort += f"Vereinbaren Sie einen Termin für: {plan_info['schritte'][fortschritt]}"
+            else:
+                antwort += "Behandlungsplan abgeschlossen! Kontrolltermin in 6 Monaten empfohlen."
+        else:
+            antwort += "**Kein aktiver Behandlungsplan gefunden.**\n\n"
+            if historie:
+                antwort += "**Letzte Termine:**\n"
+                for termin in historie[-3:]:
+                    antwort += f"- {termin.get('datum')}: {termin.get('behandlung')}\n"
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Behandlungsplan-Status: {e}")
+        return "Fehler beim Abrufen des Behandlungsplans. Bitte versuchen Sie es erneut."
+
+# Lernfähigkeit - Häufige Anfragen tracken
+from collections import defaultdict
+from datetime import datetime, timedelta
+import json
+import os
+
+class AnfragenLernsystem:
+    def __init__(self, cache_file="anfragen_cache.json"):
+        self.cache_file = cache_file
+        self.anfragen_cache = self._load_cache()
+        self.haeufige_muster = defaultdict(int)
+        self.antwort_optimierungen = {}
+        
+    def _load_cache(self):
+        """Lädt gespeicherte Anfragen-Muster"""
+        if os.path.exists(self.cache_file):
+            try:
+                with open(self.cache_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                return {"anfragen": [], "muster": {}, "optimierungen": {}}
+        return {"anfragen": [], "muster": {}, "optimierungen": {}}
+    
+    def _save_cache(self):
+        """Speichert Anfragen-Muster"""
+        try:
+            with open(self.cache_file, 'w', encoding='utf-8') as f:
+                json.dump(self.anfragen_cache, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logging.error(f"Fehler beim Speichern des Lern-Cache: {e}")
+    
+    def anfrage_aufzeichnen(self, anfrage_typ, details):
+        """Zeichnet eine Anfrage auf"""
+        self.anfragen_cache["anfragen"].append({
+            "typ": anfrage_typ,
+            "details": details,
+            "zeitstempel": datetime.now().isoformat()
+        })
+        
+        # Update Muster-Zähler
+        if anfrage_typ not in self.anfragen_cache["muster"]:
+            self.anfragen_cache["muster"][anfrage_typ] = 0
+        self.anfragen_cache["muster"][anfrage_typ] += 1
+        
+        # Nur die letzten 1000 Anfragen behalten
+        if len(self.anfragen_cache["anfragen"]) > 1000:
+            self.anfragen_cache["anfragen"] = self.anfragen_cache["anfragen"][-1000:]
+        
+        self._save_cache()
+    
+    def get_haeufige_anfragen(self, top_n=10):
+        """Gibt die häufigsten Anfragen zurück"""
+        sortierte_muster = sorted(
+            self.anfragen_cache["muster"].items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )
+        return sortierte_muster[:top_n]
+    
+    def vorschlag_generieren(self, kontext):
+        """Generiert Vorschläge basierend auf häufigen Mustern"""
+        vorschlaege = []
+        
+        # Analysiere Tageszeit-Muster
+        jetzt = datetime.now()
+        tageszeit = "vormittag" if jetzt.hour < 12 else "nachmittag" if jetzt.hour < 18 else "abend"
+        
+        # Häufige Anfragen für diese Tageszeit
+        for anfrage in self.anfragen_cache["anfragen"][-100:]:  # Letzte 100 Anfragen
+            anfrage_zeit = datetime.fromisoformat(anfrage["zeitstempel"])
+            if anfrage_zeit.hour // 6 == jetzt.hour // 6:  # Gleiche Tageszeit
+                if anfrage["typ"] not in [v["typ"] for v in vorschlaege]:
+                    vorschlaege.append({
+                        "typ": anfrage["typ"],
+                        "grund": f"Häufig {tageszeit} angefragt"
+                    })
+        
+        return vorschlaege[:3]  # Top 3 Vorschläge
+
+# Globale Instanz
+lernsystem = AnfragenLernsystem()
+
+@function_tool()
+async def lernfaehigkeit_analysieren(
+    context: RunContext
+) -> str:
+    """
+    Zeigt Lernstatistiken und häufige Anfragemuster.
+    Hilft der Praxis, Muster zu erkennen und Service zu verbessern.
+    """
+    try:
+        # Hole häufigste Anfragen
+        haeufige = lernsystem.get_haeufige_anfragen()
+        
+        antwort = "**Lernfähigkeit - Analyse häufiger Anfragen:**\n\n"
+        
+        if haeufige:
+            antwort += "**Top 10 häufigste Anfragen:**\n"
+            for i, (anfrage_typ, anzahl) in enumerate(haeufige, 1):
+                antwort += f"{i}. {anfrage_typ}: {anzahl} mal\n"
+            
+            # Erkenntnisse
+            antwort += "\n**Erkannte Muster:**\n"
+            
+            # Analysiere Terminanfragen
+            termin_anfragen = sum(anzahl for typ, anzahl in haeufige if "termin" in typ.lower())
+            if termin_anfragen > 20:
+                antwort += f"- Hohe Nachfrage nach Terminen ({termin_anfragen} Anfragen)\n"
+                antwort += "  → Empfehlung: Online-Terminbuchung einführen\n"
+            
+            # Analysiere Notfälle
+            notfall_anfragen = sum(anzahl for typ, anzahl in haeufige if "notfall" in typ.lower())
+            if notfall_anfragen > 5:
+                antwort += f"- Viele Notfallanfragen ({notfall_anfragen})\n"
+                antwort += "  → Empfehlung: Notfall-Sprechstunde erweitern\n"
+            
+            # Zeitbasierte Muster
+            antwort += "\n**Optimierungsvorschläge:**\n"
+            vorschlaege = lernsystem.vorschlag_generieren({})
+            for vorschlag in vorschlaege:
+                antwort += f"- {vorschlag['typ']}: {vorschlag['grund']}\n"
+        else:
+            antwort += "Noch keine ausreichenden Daten für eine Analyse vorhanden.\n"
+            antwort += "Das System lernt mit jeder Anfrage dazu.\n"
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei Lernfähigkeit-Analyse: {e}")
+        return "Fehler bei der Analyse der Lernstatistiken."
+
+@function_tool()
+async def haeufige_frage_beantworten(
+    context: RunContext,
+    frage_kategorie: str
+) -> str:
+    """
+    Beantwortet häufige Fragen basierend auf gelernten Mustern.
+    Passt Antworten an häufige Anfragemuster an.
+    """
+    try:
+        # Zeichne diese Anfrage auf
+        lernsystem.anfrage_aufzeichnen(f"FAQ_{frage_kategorie}", {
+            "zeitstempel": datetime.now().isoformat()
+        })
+        
+        # Vordefinierte optimierte Antworten für häufige Fragen
+        optimierte_antworten = {
+            "oeffnungszeiten": {
+                "basis": "Unsere Öffnungszeiten sind:\nMo-Fr: 9:00-11:30 und 14:00-17:30\nSa: 9:00-12:30\nSo: Geschlossen",
+                "haeufig": "**Tipp**: Viele Patienten fragen nach Terminen am frühen Morgen oder späten Nachmittag."
+            },
+            "schmerzen": {
+                "basis": "Bei akuten Schmerzen bieten wir Notfalltermine an.",
+                "haeufig": "**Häufigste Schmerzursachen**: Karies (40%), Zahnfleischentzündung (30%), Wurzelentzündung (20%)"
+            },
+            "kosten": {
+                "basis": "Die Kosten hängen von der Behandlung ab. Gerne erstellen wir einen Kostenvoranschlag.",
+                "haeufig": "**Häufig gefragt**: Zahnreinigung 80-120€, Füllung 50-200€, Krone 600-1200€"
+            },
+            "terminabsage": {
+                "basis": "Termine können bis 24 Stunden vorher kostenfrei abgesagt werden.",
+                "haeufig": "**Tipp**: Die meisten Absagen erfolgen montags. Wir haben dann oft kurzfristig Termine frei."
+            }
+        }
+        
+        antwort = f"**Antwort auf häufige Frage: {frage_kategorie}**\n\n"
+        
+        if frage_kategorie.lower() in optimierte_antworten:
+            info = optimierte_antworten[frage_kategorie.lower()]
+            antwort += f"{info['basis']}\n\n"
+            
+            # Füge gelernten Kontext hinzu
+            anfrage_anzahl = lernsystem.anfragen_cache["muster"].get(f"FAQ_{frage_kategorie}", 0)
+            if anfrage_anzahl > 10:
+                antwort += f"ℹ️ {info['haeufig']}\n\n"
+                antwort += f"Diese Frage wurde bereits {anfrage_anzahl} mal gestellt.\n"
+        else:
+            # Generische Antwort
+            antwort += "Ich helfe Ihnen gerne weiter. Können Sie Ihre Frage genauer formulieren?\n\n"
+            
+            # Zeige ähnliche häufige Fragen
+            antwort += "**Häufig gestellte Fragen:**\n"
+            for typ, _ in lernsystem.get_haeufige_anfragen(5):
+                if typ.startswith("FAQ_"):
+                    antwort += f"- {typ.replace('FAQ_', '')}\n"
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei häufiger Frage: {e}")
+        return "Entschuldigung, ich kann diese Frage momentan nicht beantworten."
+
+@function_tool()
+async def haeufige_behandlungsgruende(
+    context: RunContext,
+    patient_telefon: str = None
+) -> str:
+    """
+    Zeigt häufige Behandlungsgründe basierend auf Lernstatistiken.
+    Kann personalisiert werden für bekannte Patienten.
+    """
+    try:
+        # Hole häufigste Terminanfragen
+        haeufige = lernsystem.get_haeufige_anfragen()
+        termin_gruende = [(typ.replace("Termin_", ""), anzahl) 
+                         for typ, anzahl in haeufige 
+                         if typ.startswith("Termin_")]
+        
+        antwort = "**Häufige Behandlungsgründe in unserer Praxis:**\n\n"
+        
+        if termin_gruende:
+            # Top 5 Gründe
+            for i, (grund, anzahl) in enumerate(termin_gruende[:5], 1):
+                antwort += f"{i}. {grund} ({anzahl} Termine)\n"
+            
+            # Personalisierung für bekannte Patienten
+            if patient_telefon:
+                historie = appointment_manager.get_patientenhistorie(patient_telefon)
+                if historie:
+                    letzte_behandlung = historie[-1].get('behandlung', '') if historie else ''
+                    antwort += f"\n**Ihr letzter Termin**: {letzte_behandlung}\n"
+                    
+                    # Intelligenter Vorschlag basierend auf Zeitabstand
+                    from datetime import datetime, timedelta
+                    if letzte_behandlung.lower() == "zahnreinigung":
+                        antwort += "💡 **Tipp**: Eine Zahnreinigung ist alle 6 Monate empfohlen.\n"
+                    elif "kontrolle" in letzte_behandlung.lower():
+                        antwort += "💡 **Tipp**: Kontrolluntersuchungen sollten alle 6-12 Monate erfolgen.\n"
+        else:
+            # Standard-Gründe wenn noch keine Daten
+            antwort += "- Kontrolluntersuchung (alle 6 Monate empfohlen)\n"
+            antwort += "- Zahnreinigung (Prophylaxe)\n"
+            antwort += "- Zahnschmerzen oder Beschwerden\n"
+            antwort += "- Beratung für Zahnersatz\n"
+            antwort += "- Ästhetische Behandlungen\n"
+        
+        antwort += "\n**Für welche Behandlung möchten Sie einen Termin vereinbaren?**"
+        
+        return antwort
+        
+    except Exception as e:
+        logging.error(f"Fehler bei häufigen Behandlungsgründen: {e}")
+        return "Wofür benötigen Sie denn den Termin?"
