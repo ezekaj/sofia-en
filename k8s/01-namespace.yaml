@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sofia-dental
+  labels:
+    name: sofia-dental
+    environment: production
+    app: sofia-voice-agent
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sofia-resource-quota
+  namespace: sofia-dental
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    pods: "20"
+    services: "10"
+    persistentvolumeclaims: "10"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sofia-network-policy
+  namespace: sofia-dental
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: sofia-dental
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3005
+    - protocol: TCP
+      port: 7880
+    - protocol: TCP
+      port: 8080
+    - protocol: UDP
+      port: 7882
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: sofia-dental
+    - podSelector: {}
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443

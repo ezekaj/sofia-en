@@ -152,7 +152,12 @@ class DentalReceptionist(Agent):
 
 
 async def entrypoint(ctx: agents.JobContext):
-    print("🎤 Starte deutsche Zahnarzt-Assistentin mit Audio-Input...")
+    print("\n" + "!" * 60)
+    print("!!! SOFIA ENTRYPOINT TRIGGERED !!!")
+    print("!" * 60)
+    print(f"Room: {ctx.room.name}")
+    print(f"Room participants: {len(ctx.room.remote_participants)}")
+    print("Starte deutsche Zahnarzt-Assistentin mit Audio-Input...")
     logger.info("Starting German dental assistant agent")
     
     # Create the agent
@@ -170,13 +175,17 @@ async def entrypoint(ctx: agents.JobContext):
     session = AgentSession()
     
     # Add event handlers before connecting
-    @ctx.room.on("track_published")
-    async def on_track_published(publication: rtc.TrackPublication, participant: rtc.RemoteParticipant):
-        print(f"🎵 Audio-Track erkannt: {publication.track_info.name}")
+    def on_track_published(publication: rtc.TrackPublication, participant: rtc.RemoteParticipant):
+        async def handle_track():
+            await on_track_published_async(publication, participant)
+        asyncio.create_task(handle_track())
+    
+    async def on_track_published_async(publication: rtc.TrackPublication, participant: rtc.RemoteParticipant):
+        print(f"Audio-Track erkannt: {publication.track_info.name}")
         logger.info(f"Audio track published: {publication.track_info.name}")
         
         if publication.track_info.kind == rtc.TrackKind.KIND_AUDIO:
-            print("✅ Mikrofon-Input aktiv!")
+            print("Mikrofon-Input aktiv!")
             logger.info("Microphone input active")
             
             # Subscribe to the audio track
@@ -188,19 +197,33 @@ async def entrypoint(ctx: agents.JobContext):
                 # Start processing audio
                 await session.process_track(track)
     
-    @ctx.room.on("participant_connected")
-    async def on_participant_connected(participant: rtc.RemoteParticipant):
-        print(f"👋 Teilnehmer verbunden: {participant.identity}")
+    ctx.room.on("track_published", on_track_published)
+    
+    def on_participant_connected(participant: rtc.RemoteParticipant):
+        async def handle_participant():
+            await on_participant_connected_async(participant)
+        asyncio.create_task(handle_participant())
+    
+    async def on_participant_connected_async(participant: rtc.RemoteParticipant):
+        print(f"Teilnehmer verbunden: {participant.identity}")
         logger.info(f"Participant connected: {participant.identity}")
     
-    @ctx.room.on("data_received")
-    async def on_data_received(data: rtc.DataPacket):
-        print(f"📨 Daten empfangen: {data.data}")
+    ctx.room.on("participant_connected", on_participant_connected)
+    
+    def on_data_received(data: rtc.DataPacket):
+        async def handle_data():
+            await on_data_received_async(data)
+        asyncio.create_task(handle_data())
+    
+    async def on_data_received_async(data: rtc.DataPacket):
+        print(f"Daten empfangen: {data.data}")
         logger.info(f"Data received: {data.data}")
+    
+    ctx.room.on("data_received", on_data_received)
     
     # Connect to the room
     await ctx.connect()
-    print("🔗 Mit LiveKit-Raum verbunden")
+    print("Mit LiveKit-Raum verbunden")
     
     # Start the agent session
     await session.start(
@@ -235,9 +258,89 @@ async def entrypoint(ctx: agents.JobContext):
         await asyncio.sleep(5)
     finally:
         # Cleanup nur bei echtem Shutdown
-        print("🛑 Agent beendet")
+        print("Agent beendet")
         logger.info("Agent shutdown")
 
 
+async def connect_to_room(room_name):
+    """Direct connection to a specific room"""
+    import os
+    import requests
+    import json
+    
+    print(f"DIRECT CONNECT TO ROOM: {room_name}")
+    
+    try:
+        # Get token from the calendar server (same as web client does)
+        response = requests.post('http://localhost:3005/api/sofia/connect', json={
+            'participantName': f'Sofia-Agent-{room_name}',
+            'roomName': room_name
+        })
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data['token']
+            url = data['url']
+            
+            print(f"Got token for Sofia, connecting to {url}")
+            
+            # Create room and connect
+            from livekit import rtc
+            room = rtc.Room()
+            
+            await room.connect(url, token)
+            print(f"SOFIA CONNECTED TO ROOM: {room_name}")
+            
+            # Create a fake JobContext for the entrypoint
+            class FakeJobContext:
+                def __init__(self, room):
+                    self.room = room
+                async def connect(self):
+                    pass  # Already connected
+            
+            # Run the entrypoint
+            ctx = FakeJobContext(room)
+            await entrypoint(ctx)
+            
+        else:
+            print(f"Failed to get token: {response.status_code}")
+            
+    except Exception as e:
+        print(f"Connection error: {e}")
+
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    import sys
+    import asyncio
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "connect" and len(sys.argv) > 2:
+        # Direct room connection mode
+        room_name = sys.argv[2]
+        print(f"Starting Sofia in direct connect mode for room: {room_name}")
+        asyncio.run(connect_to_room(room_name))
+    else:
+        # Normal worker mode
+        import os
+        
+        # Ensure environment variables are loaded
+        load_dotenv()
+        
+        worker_options = agents.WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            # Don't set agent_name to keep automatic dispatch enabled
+            ws_url=os.getenv("LIVEKIT_URL", "ws://localhost:7880"),
+            api_key=os.getenv("LIVEKIT_API_KEY", "devkey"),
+            api_secret=os.getenv("LIVEKIT_API_SECRET", "secret"),
+        )
+        
+        print("\n" + "=" * 60)
+        print("SOFIA DENTAL ASSISTANT - WORKER MODE")
+        print("THIS IS THE REAL SOFIA FROM agent.py")
+        print("=" * 60)
+        print(f"LiveKit URL: {worker_options.ws_url}")
+        print(f"API Key: {worker_options.api_key}")
+        print("Auto-dispatch: ENABLED (no agent_name set)")
+        print("Waiting for room assignments...")
+        print("If you see 'SOFIA ENTRYPOINT TRIGGERED' below, Sofia is working!")
+        print("=" * 60 + "\n")
+        
+        agents.cli.run_app(worker_options)

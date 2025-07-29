@@ -5,6 +5,8 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const { AccessToken } = require('livekit-server-sdk');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
@@ -607,6 +609,157 @@ function formatDate(dateString) {
 function getDayName(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString('de-DE', { weekday: 'long' });
+}
+
+// Sofia connection endpoint for voice chat
+app.post('/api/sofia/connect', async (req, res) => {
+  const { participantName, roomName } = req.body;
+  
+  try {
+    const token = await generateLiveKitToken(participantName, roomName);
+    
+    console.log(`🎤 User connecting to room: ${roomName}, dispatching Sofia agent...`);
+    
+    // Dispatch Sofia agent to the room using LiveKit API
+    await dispatchSofiaToRoom(roomName);
+    
+    // Also send a manual dispatch signal to ensure Sofia joins
+    setTimeout(async () => {
+      console.log(`🔄 Backup dispatch for room: ${roomName}`);
+      await triggerSofiaManually(roomName);
+    }, 5000);
+    
+    res.json({
+      token: token,
+      url: process.env.LIVEKIT_URL || 'ws://localhost:7880',
+      roomName: roomName
+    });
+  } catch (error) {
+    console.error('Error generating Sofia connection:', error);
+    res.status(500).json({ error: 'Failed to generate connection token' });
+  }
+});
+
+// Dispatch Sofia agent to a specific room
+async function dispatchSofiaToRoom(roomName) {
+  try {
+    console.log(`📡 Dispatching Sofia agent to room: ${roomName}`);
+    
+    const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
+    const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
+    const liveKitUrl = process.env.LIVEKIT_URL || 'ws://localhost:7880';
+    
+    // Convert WebSocket URL to HTTP for REST API
+    const httpUrl = liveKitUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+    
+    // Create dispatch request using LiveKit's agent dispatch API
+    const dispatchUrl = `${httpUrl}/agents/dispatch`;
+    
+    const dispatchPayload = {
+      agent_name: 'dental-assistant',
+      room: roomName,
+      metadata: {
+        agent_type: 'sofia',
+        language: 'multi',
+        room_type: 'dental-calendar'
+      }
+    };
+    
+    // Make HTTP request to dispatch agent
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(dispatchUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${createJWTForAPI(apiKey, apiSecret)}`
+      },
+      body: JSON.stringify(dispatchPayload)
+    });
+    
+    if (response.ok) {
+      const result = await response.text();
+      console.log(`✅ Sofia successfully dispatched to room: ${roomName}`);
+      console.log('Dispatch response:', result);
+      return true;
+    } else {
+      // If dispatch API doesn't exist, try alternative approach
+      console.log(`⚠️ Agent dispatch API not available (${response.status}), Sofia will join automatically when room has participants`);
+      return true;
+    }
+    
+  } catch (error) {
+    console.log(`⚠️ Dispatch error (${error.message}), Sofia should join automatically when participants connect`);
+    return true; // Don't fail the connection if dispatch fails
+  }
+}
+
+// Manual trigger for Sofia to join room by creating a Sofia participant directly
+async function triggerSofiaManually(roomName) {
+  try {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    
+    console.log(`🤖 Manually spawning Sofia for room: ${roomName}`);
+    
+    // Create a dedicated Sofia process for this room
+    const agentPath = path.join(__dirname, '..', 'agent.py');
+    const pythonProcess = spawn('python', [agentPath, 'connect', roomName], {
+      cwd: path.join(__dirname, '..'),
+      stdio: 'pipe'
+    });
+    
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`Sofia (${roomName}):`, data.toString());
+    });
+    
+    pythonProcess.stderr.on('data', (data) => {
+      console.log(`Sofia Error (${roomName}):`, data.toString());
+    });
+    
+    console.log(`✅ Sofia process started for room: ${roomName}`);
+    return true;
+    
+  } catch (error) {
+    console.log(`⚠️ Manual Sofia spawn failed: ${error.message}`);
+    return false;
+  }
+}
+
+// Helper function to create JWT for LiveKit API
+function createJWTForAPI(apiKey, apiSecret) {
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity: 'server-admin',
+    ttl: '1h',
+  });
+  at.addGrant({ roomAdmin: true });
+  return at.toJwt();
+}
+
+// Helper function to generate LiveKit token
+async function generateLiveKitToken(participantName, roomName) {
+  const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
+  const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
+  
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity: participantName,
+    ttl: '10h',
+  });
+  
+  at.addGrant({ 
+    roomJoin: true, 
+    room: roomName,
+    canPublish: true,
+    canSubscribe: true,
+    canPublishData: true
+  });
+  
+  // Add metadata to request agent dispatch
+  at.metadata = JSON.stringify({
+    request_agent: true,
+    agent_type: 'dental-assistant'
+  });
+  
+  return await at.toJwt();
 }
 
 // Socket.io connection

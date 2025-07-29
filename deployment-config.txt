@@ -1,0 +1,18 @@
+====================================
+SOFIA AI DEPLOYMENT CONFIGURATION
+====================================
+
+Please fill in these values from your accounts:
+
+1. LIVEKIT CLOUD (from https://cloud.livekit.io/projects):
+   - API Key: ___________________________
+   - API Secret: ___________________________
+   - WebSocket URL: ___________________________
+
+2. GOOGLE API (from https://console.cloud.google.com/):
+   - API Key: ___________________________
+
+3. RAILWAY PROJECT NAME:
+   - Project Name: ___________________________
+
+====================================

@@ -1,0 +1,239 @@
+# LiveKit Server - Production Ready Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit-server
+  namespace: sofia-dental
+  labels:
+    app: livekit-server
+    component: voice-processing
+    version: v1.0.0
+spec:
+  replicas: 2  # High availability
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Ensure zero downtime
+  selector:
+    matchLabels:
+      app: livekit-server
+  template:
+    metadata:
+      labels:
+        app: livekit-server
+        component: voice-processing
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7880"
+        prometheus.io/path: "/metrics"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - livekit-server
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: livekit
+        image: livekit/livekit-server:v1.4.3  # Pinned version for stability
+        ports:
+        - containerPort: 7880
+          name: http
+          protocol: TCP
+        - containerPort: 7881
+          name: rtc-tcp
+          protocol: TCP
+        - containerPort: 7882
+          name: rtc-udp
+          protocol: UDP
+        env:
+        - name: LIVEKIT_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: sofia-secrets
+              key: LIVEKIT_API_SECRET
+        - name: LIVEKIT_CONFIG
+          value: "/etc/livekit/livekit.yaml"
+        - name: LIVEKIT_LOG_LEVEL
+          value: "info"
+        command: ["livekit-server"]
+        args: ["--config", "/etc/livekit/livekit.yaml", "--bind", "0.0.0.0"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/livekit
+          readOnly: true
+        - name: logs
+          mountPath: /var/log/livekit
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"  # Increased for production load
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 7880
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 7880
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /
+            port: 7880
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # Allow 5 minutes for startup
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: livekit-config
+          defaultMode: 0644
+      - name: logs
+        persistentVolumeClaim:
+          claimName: logs-pvc
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30
+---
+# LiveKit Service - Production Configuration
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit-service
+  namespace: sofia-dental
+  labels:
+    app: livekit-server
+    component: voice-processing
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # For AWS
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: livekit-server
+  ports:
+  - name: http
+    port: 7880
+    targetPort: 7880
+    protocol: TCP
+  - name: rtc-tcp
+    port: 7881
+    targetPort: 7881
+    protocol: TCP
+  - name: rtc-udp
+    port: 7882
+    targetPort: 7882
+    protocol: UDP
+  type: ClusterIP
+  sessionAffinity: ClientIP  # Maintain session stickiness
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+---
+# LiveKit LoadBalancer for External Access
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit-loadbalancer
+  namespace: sofia-dental
+  labels:
+    app: livekit-server
+    component: external-access
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+spec:
+  selector:
+    app: livekit-server
+  ports:
+  - name: http
+    port: 7880
+    targetPort: 7880
+    protocol: TCP
+  - name: rtc-tcp
+    port: 7881
+    targetPort: 7881
+    protocol: TCP
+  - name: rtc-udp
+    port: 7882
+    targetPort: 7882
+    protocol: UDP
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+  - 0.0.0.0/0  # Restrict in production
+  externalTrafficPolicy: Local  # Preserve source IP
+---
+# Horizontal Pod Autoscaler for LiveKit
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: livekit-hpa
+  namespace: sofia-dental
+  labels:
+    app: livekit-server
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: livekit-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15

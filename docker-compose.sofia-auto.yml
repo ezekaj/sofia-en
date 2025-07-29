@@ -1,0 +1,74 @@
+# Sofia Auto-Deployment with Docker Compose
+# This provides a Kubernetes-like experience using Docker Compose
+version: '3.8'
+
+services:
+  # LiveKit Server
+  livekit:
+    image: livekit/livekit-server:latest
+    ports:
+      - "7880:7880"    # WebRTC
+      - "7881:7881"    # TURN/UDP
+      - "7882:7882"    # Admin API
+    environment:
+      LIVEKIT_KEYS: "devkey: secret"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
+    networks:
+      - sofia-network
+    restart: unless-stopped
+
+  # Calendar Server with Sofia deployment capability
+  dental-calendar:
+    build:
+      context: ./dental-calendar
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      NODE_ENV: "production"
+      LIVEKIT_URL: "ws://livekit:7880"
+      LIVEKIT_API_KEY: "devkey"
+      LIVEKIT_API_SECRET: "secret"
+      SOFIA_DOCKER_HOST: "unix:///var/run/docker.sock"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Docker-in-Docker
+      - ./dental-calendar/dental_calendar.db:/app/dental_calendar.db
+    depends_on:
+      - livekit
+    networks:
+      - sofia-network
+    restart: unless-stopped
+
+  # Sofia Agent (started with 0 replicas - will be scaled by button)
+  sofia-agent:
+    image: sofia-agent:auto-deploy
+    environment:
+      LIVEKIT_URL: "ws://livekit:7880"
+      LIVEKIT_API_KEY: "devkey"
+      LIVEKIT_API_SECRET: "secret"
+      CALENDAR_URL: "http://dental-calendar:3005"
+      PYTHON_ENV: "production"
+      LOG_LEVEL: "INFO"
+    depends_on:
+      - livekit
+      - dental-calendar
+    networks:
+      - sofia-network
+    restart: "no"  # Don't auto-restart - will be managed by button triggers
+    deploy:
+      replicas: 0  # Start with 0 - button will scale to 1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  sofia-network:
+    driver: bridge
+
+volumes:
+  sofia-data:
+    driver: local

@@ -1,0 +1,227 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sofia-agent
+  namespace: sofia-dental
+  labels:
+    app: sofia-agent
+    component: voice-agent
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
+  selector:
+    matchLabels:
+      app: sofia-agent
+  template:
+    metadata:
+      labels:
+        app: sofia-agent
+        component: voice-agent
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: sofia-agent
+        image: sofia-agent:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: health
+          protocol: TCP
+        - containerPort: 8081
+          name: metrics
+          protocol: TCP
+        env:
+        - name: LIVEKIT_URL
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: LIVEKIT_URL
+        - name: LIVEKIT_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sofia-secrets
+              key: LIVEKIT_API_KEY
+        - name: LIVEKIT_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: sofia-secrets
+              key: LIVEKIT_API_SECRET
+        - name: CALENDAR_URL
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: CALENDAR_URL
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sofia-secrets
+              key: GEMINI_API_KEY
+        - name: SOFIA_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: SOFIA_LOG_LEVEL
+        - name: SOFIA_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: SOFIA_ENVIRONMENT
+        - name: SOFIA_MAX_CONNECTIONS
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: SOFIA_MAX_CONNECTIONS
+        - name: SOFIA_AUTO_RECONNECT
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: SOFIA_AUTO_RECONNECT
+        - name: ENABLE_METRICS
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: ENABLE_METRICS
+        - name: METRICS_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: METRICS_PATH
+        command: ["python"]
+        args: ["agent.py", "production"]
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: temp
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: temp
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - sofia-agent
+              topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: "sofia-workload"
+        operator: "Equal"
+        value: "agent"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sofia-agent-service
+  namespace: sofia-dental
+  labels:
+    app: sofia-agent
+    component: voice-agent
+spec:
+  selector:
+    app: sofia-agent
+  ports:
+  - name: health
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sofia-agent-hpa
+  namespace: sofia-dental
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sofia-agent
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 180
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 120
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sofia-agent-pdb
+  namespace: sofia-dental
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: sofia-agent

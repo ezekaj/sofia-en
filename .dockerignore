@@ -1,0 +1,58 @@
+# Ignore large directories and files to speed up Docker build
+node_modules/
+dental_env/
+.git/
+*.db
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.tox/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Ignore documentation and markdown files
+*.md
+docs/
+README*
+
+# Ignore test files
+test_*.py
+tests/
+
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore large data files
+data/
+*.json
+*.csv
+
+# Ignore non-essential scripts
+scripts/
+*.sh
+*.bat
+
+# Ignore Kubernetes files (not needed in container)
+k8s/

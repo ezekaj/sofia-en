@@ -110,7 +110,7 @@ class AppointmentManager:
         
         conn.commit()
         conn.close()
-        print("✅ Terminverwaltung-Datenbank initialisiert")
+        print("Terminverwaltung-Datenbank initialisiert")
     
     def termin_hinzufuegen(self, patient_name: str, telefon: str, datum: str,
                           uhrzeit: str, behandlungsart: str, email: str = "",

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sofia-agent
+  namespace: sofia-dental
+  labels:
+    app: sofia-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sofia-agent
+  template:
+    metadata:
+      labels:
+        app: sofia-agent
+    spec:
+      containers:
+      - name: sofia-agent
+        image: sofia-agent:latest
+        ports:
+        - containerPort: 8080
+          name: health
+        env:
+        - name: LIVEKIT_URL
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: LIVEKIT_URL
+        - name: LIVEKIT_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: LIVEKIT_API_KEY
+        - name: LIVEKIT_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: sofia-secrets
+              key: LIVEKIT_API_SECRET
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sofia-secrets
+              key: GOOGLE_API_KEY
+        - name: CALENDAR_URL
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: CALENDAR_URL
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sofia-agent-service
+  namespace: sofia-dental
+spec:
+  selector:
+    app: sofia-agent
+  ports:
+  - name: health
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP

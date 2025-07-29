@@ -72,6 +72,156 @@
             background: #218838;
         }
         
+        .btn-sofia {
+            background: #1db954;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-sofia:hover {
+            background: #1aa34a;
+        }
+        
+        .btn-sofia.active {
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+        
+        .sofia-icon {
+            display: inline-block;
+            animation: none;
+        }
+        
+        .btn-sofia.active .sofia-icon {
+            animation: rotate 2s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .sofia-interface {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-width: 90%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            height: 500px;
+            z-index: 1001;
+        }
+        
+        .sofia-interface.visible {
+            display: flex;
+        }
+        
+        .sofia-header {
+            background: linear-gradient(135deg, #1db954 0%, #1aa34a 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sofia-chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .sofia-message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .sofia-message.sofia {
+            background: #e3f2fd;
+            color: #1565c0;
+            margin-right: auto;
+        }
+        
+        .sofia-message.user {
+            background: #1db954;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .sofia-status {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .voice-indicator {
+            width: 20px;
+            height: 20px;
+            background: #1db954;
+            border-radius: 50%;
+            animation: voicePulse 1.5s ease-in-out infinite;
+        }
+        
+        .voice-indicator.inactive {
+            background: #ccc;
+            animation: none;
+        }
+        
+        @keyframes voicePulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+        }
+        
+        .sofia-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sofia-close:hover {
+            opacity: 0.8;
+        }
+        
         .status-indicator {
             display: inline-block;
             padding: 4px 8px;
@@ -228,6 +378,9 @@
         <button class="btn" onclick="showToday()">
             📅 Heute anzeigen
         </button>
+        <button class="btn btn-sofia" id="sofiaAgentBtn">
+            <span class="sofia-icon">🎧</span> Sofia Agent
+        </button>
         <span class="status-indicator status-confirmed">✅ Bestätigt</span>
         <span class="status-indicator status-cancelled">❌ Abgesagt</span>
         <span class="status-indicator status-completed">✅ Erledigt</span>
@@ -290,11 +443,30 @@
         </div>
     </div>
 
+    <!-- Sofia Voice Interface -->
+    <div class="sofia-interface" id="sofiaInterface">
+        <div class="sofia-header">
+            <div>
+                <h3 style="margin: 0;">Sofia AI Assistant</h3>
+                <small style="opacity: 0.9;">Sprechen Sie in Deutsch, English oder Italiano</small>
+            </div>
+            <button class="sofia-close" onclick="closeSofiaInterface()">✕</button>
+        </div>
+        <div class="sofia-chat" id="sofiaChat">
+            <!-- Messages will appear here -->
+        </div>
+        <div class="sofia-status">
+            <div class="voice-indicator" id="voiceIndicator"></div>
+            <span id="sofiaStatusText">Bereit zum Zuhören...</span>
+        </div>
+    </div>
+
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <!-- Socket.io -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     
     <script src="calendar.js"></script>
+    <script src="sofia-real-connection.js"></script>
 </body>
 </html>

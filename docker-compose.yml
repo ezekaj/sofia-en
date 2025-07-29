@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # LiveKit Server for Voice Processing - Investor Demo Optimized
+  livekit:
+    image: livekit/livekit-server:latest
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    environment:
+      - "LIVEKIT_KEYS=devkey: secret"
+      - "LIVEKIT_LOG_LEVEL=warn"  # Reduce log verbosity for demos
+    command: --dev --bind 0.0.0.0 --config /etc/livekit.yaml
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
+    networks:
+      - sofia-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7880/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Sofia Voice Agent
+  sofia-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.sofia
+    environment:
+      - LIVEKIT_URL=ws://livekit:7880
+      - LIVEKIT_API_KEY=devkey
+      - LIVEKIT_API_SECRET=secret
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - CALENDAR_URL=http://dental-calendar:3005
+      - PYTHON_ENV=development
+      - LOG_LEVEL=DEBUG
+      - HEALTH_CHECK_PORT=8080
+      - CIRCUIT_BREAKER_THRESHOLD=3
+      - CIRCUIT_BREAKER_TIMEOUT=30
+      - MAX_RETRIES=3
+      - RETRY_BASE_DELAY=1
+    depends_on:
+      - livekit
+      - dental-calendar
+    networks:
+      - sofia-network
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Dental Calendar with Voice Integration
+  dental-calendar:
+    build:
+      context: ./dental-calendar
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    volumes:
+      - calendar-data:/app/data
+    networks:
+      - sofia-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SOFIA_VOICE_ENABLED=true
+
+  # CRM Dashboard
+  crm-dashboard:
+    build:
+      context: ./crm
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - calendar-data:/app/data
+    networks:
+      - sofia-network
+    restart: unless-stopped
+
+  # Sofia Web Interface
+  sofia-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "5001:5001"
+    depends_on:
+      - dental-calendar
+      - sofia-agent
+    networks:
+      - sofia-network
+    restart: unless-stopped
+
+volumes:
+  calendar-data:
+
+networks:
+  sofia-network:
+    driver: bridge

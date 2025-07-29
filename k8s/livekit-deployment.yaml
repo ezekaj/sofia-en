@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit-server
+  namespace: sofia-dental
+  labels:
+    app: livekit-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: livekit-server
+  template:
+    metadata:
+      labels:
+        app: livekit-server
+    spec:
+      containers:
+      - name: livekit
+        image: livekit/livekit-server:latest
+        ports:
+        - containerPort: 7880
+          name: http
+        - containerPort: 7881
+          name: rtc-tcp
+        - containerPort: 7882
+          name: rtc-udp
+          protocol: UDP
+        env:
+        - name: LIVEKIT_KEYS
+          value: "devkey secret"
+        command: ["livekit-server"]
+        args: ["--dev", "--bind", "0.0.0.0", "--config", "/etc/livekit.yaml"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/livekit.yaml
+          subPath: livekit.yaml
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 7880
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 7880
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: livekit-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit-service
+  namespace: sofia-dental
+spec:
+  selector:
+    app: livekit-server
+  ports:
+  - name: http
+    port: 7880
+    targetPort: 7880
+  - name: rtc-tcp
+    port: 7881
+    targetPort: 7881
+  - name: rtc-udp
+    port: 7882
+    targetPort: 7882
+    protocol: UDP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: livekit-config
+  namespace: sofia-dental
+data:
+  livekit.yaml: |
+    port: 7880
+    bind_addresses:
+      - ""
+    rtc:
+      tcp_port: 7881
+      port_range_start: 50000
+      port_range_end: 60000
+      use_external_ip: false
+    keys:
+      devkey: secret
+    development: true
+    logging:
+      level: info
+    room:
+      auto_create: true
+      enable_recording: false

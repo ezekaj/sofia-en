@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dental-calendar
+  namespace: sofia-dental
+  labels:
+    app: dental-calendar
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dental-calendar
+  template:
+    metadata:
+      labels:
+        app: dental-calendar
+    spec:
+      containers:
+      - name: dental-calendar
+        image: dental-calendar:latest
+        ports:
+        - containerPort: 3005
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: NODE_ENV
+        - name: SOFIA_VOICE_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: sofia-config
+              key: SOFIA_VOICE_ENABLED
+        volumeMounts:
+        - name: calendar-data
+          mountPath: /app/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3005
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3005
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: calendar-data
+        persistentVolumeClaim:
+          claimName: calendar-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dental-calendar-service
+  namespace: sofia-dental
+spec:
+  selector:
+    app: dental-calendar
+  ports:
+  - name: http
+    port: 3005
+    targetPort: 3005
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: calendar-data-pvc
+  namespace: sofia-dental
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
