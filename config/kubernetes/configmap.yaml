@@ -9,7 +9,6 @@ data:
   NODE_ENV: "production"
   SOFIA_VOICE_ENABLED: "true"
   CALENDAR_URL: "http://dental-calendar-service:3005"
-  CRM_URL: "http://crm-service:5000"
 ---
 apiVersion: v1
 kind: Secret

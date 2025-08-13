@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zahnarztpraxis Kalender</title>
+    <title>Dental Practice Calendar</title>
     
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
@@ -364,19 +364,19 @@
     </div>
 
     <div class="header">
-        <h1>🦷 Zahnarztpraxis Kalender</h1>
-        <p>Terminverwaltung mit Sofia-Integration</p>
+        <h1>🦷 Dental Practice Calendar</h1>
+        <p>Appointment Management with Sofia Integration</p>
     </div>
 
     <div class="controls">
         <button class="btn btn-success" onclick="openNewAppointmentModal()">
-            ➕ Neuer Termin
+            ➕ New Appointment
         </button>
         <button class="btn" onclick="refreshCalendar()">
-            🔄 Aktualisieren
+            🔄 Refresh
         </button>
         <button class="btn" onclick="showToday()">
-            📅 Heute anzeigen
+            📅 Today anzeigen
         </button>
         <button class="btn btn-sofia" id="sofiaAgentBtn">
             <span class="sofia-icon">🎧</span> Sofia Agent
@@ -392,7 +392,7 @@
     <div id="appointmentModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <h2>📅 Neuer Termin</h2>
+            <h2>📅 New Appointment</h2>
             <form id="appointmentForm">
                 <div class="form-group">
                     <label for="patientName">Patient Name *</label>
@@ -400,43 +400,43 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="patientPhone">Telefon *</label>
+                    <label for="patientPhone">Phone *</label>
                     <input type="tel" id="patientPhone" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="appointmentDate">Datum *</label>
+                    <label for="appointmentDate">Date *</label>
                     <input type="date" id="appointmentDate" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="appointmentTime">Uhrzeit *</label>
+                    <label for="appointmentTime">Time *</label>
                     <input type="time" id="appointmentTime" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="treatmentType">Behandlung</label>
+                    <label for="treatmentType">Treatment</label>
                     <select id="treatmentType">
-                        <option value="Kontrolle">Kontrolle</option>
-                        <option value="Zahnreinigung">Zahnreinigung</option>
-                        <option value="Füllung">Füllung</option>
-                        <option value="Wurzelbehandlung">Wurzelbehandlung</option>
-                        <option value="Extraktion">Extraktion</option>
-                        <option value="Beratung">Beratung</option>
+                        <option value="Check-up">Check-up</option>
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Filling">Filling</option>
+                        <option value="Root Canal">Root Canal</option>
+                        <option value="Extraction">Extraction</option>
+                        <option value="Consultation">Consultation</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label for="notes">Notizen</label>
+                    <label for="notes">Notes</label>
                     <textarea id="notes" rows="3"></textarea>
                 </div>
                 
                 <div style="text-align: right; margin-top: 30px;">
                     <button type="button" class="btn" onclick="closeModal()" style="background: #6c757d;">
-                        Abbrechen
+                        Cancel
                     </button>
                     <button type="submit" class="btn btn-success">
-                        Termin erstellen
+                        Create Appointment
                     </button>
                 </div>
             </form>
@@ -448,7 +448,7 @@
         <div class="sofia-header">
             <div>
                 <h3 style="margin: 0;">Sofia AI Assistant</h3>
-                <small style="opacity: 0.9;">Sprechen Sie in Deutsch, English oder Italiano</small>
+                <small style="opacity: 0.9;">Speak in English</small>
             </div>
             <button class="sofia-close" onclick="closeSofiaInterface()">✕</button>
         </div>

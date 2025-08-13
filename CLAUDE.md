@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance when working with code in this repository.
 
 ## Project Overview
 
-ELO German - A sophisticated German dental practice AI voice assistant built with LiveKit, Google AI (Gemini), and a multi-service architecture. The system acts as Sofia, a professional virtual receptionist for a German dental practice, handling appointment booking, patient inquiries, and practice information entirely in German.
+ELO English - A sophisticated English dental practice AI voice assistant built with LiveKit, Google AI (Gemini), and a multi-service architecture. The system acts as Sofia, a professional virtual receptionist for an English-speaking dental practice, handling appointment booking, patient inquiries, and practice information entirely in English.
 
 ## Architecture Overview
 
@@ -18,16 +18,15 @@ ELO German - A sophisticated German dental practice AI voice assistant built wit
                                │                           │
                                │                           │
                         ┌──────▼──────┐           ┌───────▼────────┐
-                        │  Sofia Web  │           │  CRM Dashboard │
-                        │  Interface  │           │   (Flask/Web)  │
-                        └─────────────┘           └────────────────┘
+                        │  Sofia Web  │
+                        │  Interface  │
+                        └─────────────┘
 ```
 
 ### Key Components
 
 - **agent.py**: Main LiveKit voice agent with comprehensive dental practice tools
 - **dental-calendar/**: Node.js appointment calendar with real-time updates and voice integration
-- **crm/**: Flask-based CRM dashboard for practice staff
 - **sofia_websocket_bridge.py**: WebSocket bridge for browser-agent communication
 - **k8s/**: Kubernetes deployment configurations
 
@@ -42,7 +41,6 @@ start_sofia_calendar.bat
 # Individual services
 python agent.py dev              # Sofia voice agent
 cd dental-calendar && npm start  # Calendar UI
-cd crm && python app.py         # CRM dashboard
 python sofia_web.py              # Web interface
 ```
 
@@ -64,17 +62,17 @@ docker-compose up dental-calendar # Just calendar
 # Voice agent testing
 python agent.py console           # Console mode (no LiveKit)
 python demo_agent.py             # Simple demo mode
-python test_german_agent.py      # Test German interactions
+python test_english_agent.py      # Test English interactions
 
 # Integration testing
 python test_calendar_integration.py  # Calendar integration
-python test_terminverwaltung.py     # Appointment management
+python test_appointment_management.py     # Appointment management
 python test_full_integration.py     # Full system test
 
 # Specific feature tests
-python tests/test_deutsche_uebersetzung.py  # German translation
-python tests/test_begruessung_wiederherstellung.py  # Greeting tests
-python tests/test_intelligente_vorschlaege.py  # Smart suggestions
+python tests/test_english_translation.py  # English translation
+python tests/test_greeting_recovery.py  # Greeting tests
+python tests/test_smart_suggestions.py  # Smart suggestions
 ```
 
 ### Deployment Commands
@@ -98,7 +96,7 @@ docker-compose -f docker-compose.simple.yml up  # Simple mode
 src/
 ├── agent/           # Voice agent logic
 │   ├── agent.py    # Agent implementation
-│   └── prompts.py  # German persona & instructions
+│   └── prompts.py  # English persona & instructions
 ├── dental/         # Dental practice functionality
 │   ├── dental_tools.py       # All appointment & patient tools
 │   └── appointment_manager.py # SQLite appointment storage
@@ -108,7 +106,7 @@ src/
 │   └── clinic_knowledge.py   # Services, hours, FAQs
 └── utils/          # Utilities
     ├── enhanced_calendar_client.py
-    └── german_conversation_flows.py
+    └── english_conversation_flows.py
 ```
 
 ### Key Integration Points
@@ -119,7 +117,7 @@ src/
    - Calendar UI includes voice button for Sofia interaction
 
 2. **Database Architecture**:
-   - SQLite: `termine.db` for appointments
+   - SQLite: `appointments.db` for appointments
    - JSON: `data/patients.json` for patient info
    - Shared volume in Docker for data persistence
 
@@ -131,21 +129,21 @@ src/
 ## Critical Functions & Tools
 
 ### Appointment Management
-- `termin_buchen_calendar_system()` - Calendar integration booking
-- `sofia_naechster_freier_termin()` - Next available appointment
-- `sofia_terminvorschlaege_intelligent()` - Smart appointment suggestions
-- `check_verfuegbarkeit_spezifisch()` - Specific availability checking
+- `book_appointment_calendar_system()` - Calendar integration booking
+- `sofia_next_available_appointment()` - Next available appointment
+- `sofia_smart_appointment_suggestions()` - Smart appointment suggestions
+- `check_specific_availability()` - Specific availability checking
 
 ### Conversation Management
-- `get_zeitabhaengige_begruessung()` - Time-aware greetings
-- `gespraech_beenden()` - Conversation ending
-- `intelligente_antwort_mit_namen_erkennung()` - Name recognition
+- `get_time_based_greeting()` - Time-aware greetings
+- `end_conversation()` - Conversation ending
+- `smart_response_with_name_recognition()` - Name recognition
 - `call_manager` - Call state management
 
 ### Patient Interaction
 - `collect_patient_info()` - Patient data collection
-- `get_patientenhistorie()` - Patient history retrieval
-- `medizinische_nachfragen_stellen()` - Medical follow-ups
+- `get_patient_history()` - Patient history retrieval
+- `ask_medical_followup_questions()` - Medical follow-ups
 
 ## Environment Configuration
 
@@ -166,10 +164,10 @@ CALENDAR_URL=http://localhost:3005  # or http://dental-calendar:3005 in Docker
 ## Development Guidelines
 
 ### Language & Localization
-- All user-facing text must be in German
-- Use formal "Sie" address for patients
-- Time format: 24-hour (e.g., "14:30 Uhr")
-- Date format: DD.MM.YYYY
+- All user-facing text must be in English
+- Use polite, professional language
+- Time format: 12-hour with AM/PM (e.g., "2:30 PM")
+- Date format: MM/DD/YYYY (US) or DD/MM/YYYY (UK)
 
 ### Voice Interaction Patterns
 - Always start with time-appropriate greeting
@@ -180,7 +178,7 @@ CALENDAR_URL=http://localhost:3005  # or http://dental-calendar:3005 in Docker
 ### Testing Strategy
 1. Unit tests for individual functions
 2. Integration tests for service communication
-3. Voice interaction tests with German scenarios
+3. Voice interaction tests with English scenarios
 4. End-to-end appointment booking flows
 
 ### Common Development Tasks
@@ -189,9 +187,9 @@ CALENDAR_URL=http://localhost:3005  # or http://dental-calendar:3005 in Docker
 # Add new appointment function
 # 1. Add to src/dental/dental_tools.py
 # 2. Import in agent.py tools list
-# 3. Test with: python test_terminverwaltung.py
+# 3. Test with: python test_appointment_management.py
 
-# Update German responses
+# Update English responses
 # 1. Modify src/agent/prompts.py
 # 2. Test with: python agent.py console
 
@@ -210,14 +208,13 @@ CALENDAR_URL=http://localhost:3005  # or http://dental-calendar:3005 in Docker
 
 ### Common Issues & Solutions
 1. **No audio**: Check microphone permissions, LiveKit connection
-2. **German not working**: Verify language="de-DE" in agent config
-3. **Appointments not saving**: Check termine.db permissions
+2. **English not working**: Verify language="en-US" in agent config
+3. **Appointments not saving**: Check appointments.db permissions
 4. **WebSocket errors**: Ensure all services are running
 
 ### Health Checks
 - Sofia Agent: http://localhost:8080/health
 - Calendar: http://localhost:3005
-- CRM: http://localhost:5000
 
 ## Production Considerations
 
@@ -231,10 +228,25 @@ CALENDAR_URL=http://localhost:3005  # or http://dental-calendar:3005 in Docker
 - API keys in environment variables
 - Patient data encrypted at rest
 - HTTPS for production deployments
-- Role-based access in CRM
 
 ### Performance
 - LiveKit handles voice processing
 - SQLite suitable for small-medium practices
 - Consider PostgreSQL for larger deployments
 - Redis for session management (future)
+
+## Emergency Numbers (UK/US/International)
+
+### United Kingdom
+- **Emergency**: 999 or 112
+- **Non-Emergency Medical**: 111 (NHS)
+- **Police Non-Emergency**: 101
+
+### United States
+- **Emergency**: 911
+- **Poison Control**: 1-800-222-1222
+- **Mental Health Crisis**: 988
+
+### International
+- **International Emergency**: 112 (works in most countries)
+- **Medical Assistance**: Contact local embassy for guidance

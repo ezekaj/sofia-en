@@ -1,7 +1,7 @@
-# Zahnarztpraxis Dr. Weber - Wissensdatenbank
+# Zahnarztpraxis Dr. Smith - Wissensdatenbank
 
 CLINIC_INFO = {
-    "name": "Zahnarztpraxis Dr. Weber",
+    "name": "Zahnarztpraxis Dr. Smith",
     "address": "Hauptstraße 123, 10115 Berlin, Deutschland",
     "phone": "+49 30 12345678",
     "email": "info@praxis-weber.de",
@@ -34,7 +34,7 @@ SERVICES = {
         "price_range": "€80-120"
     },
     "kieferorthopaedie": {
-        "name": "Kieferorthopädie",
+        "name": "orthodontics",
         "description": "Feste und herausnehmbare Zahnspangen, unsichtbare Aligner",
         "duration": "45-90 Minuten",
         "price_range": "€2000-6000 (komplette Behandlung)"
@@ -52,7 +52,7 @@ SERVICES = {
         "price_range": "€200-800"
     },
     "endodontie": {
-        "name": "Endodontie",
+        "name": "endodontics",
         "description": "Wurzelkanalbehandlungen und Nervbehandlungen",
         "duration": "60-90 Minuten",
         "price_range": "€300-600"
@@ -73,7 +73,7 @@ SERVICES = {
 
 STAFF = {
     "dr_weber": {
-        "name": "Dr. Weber",
+        "name": "Dr. Smith",
         "title": "Zahnarzt",
         "specializations": ["Allgemeine Zahnheilkunde", "Ästhetische Zahnheilkunde", "Implantologie"],
         "experience": "15 Jahre Erfahrung",
@@ -82,7 +82,7 @@ STAFF = {
     "prophylaxe_assistentin": {
         "name": "Frau Müller",
         "title": "Dentalhygienikerin",
-        "specializations": ["Zahnreinigung", "Prophylaxe"],
+        "specializations": ["dental cleaning", "Prophylaxe"],
         "experience": "8 Jahre Erfahrung"
     }
 }
@@ -124,7 +124,7 @@ FAQ = {
 
 APPOINTMENT_TYPES = {
     "kontrolluntersuchung": {
-        "name": "Kontrolluntersuchung",
+        "name": "check-up",
         "duration": 30,
         "description": "Allgemeine Kontrolle des Mundgesundheitszustands"
     },

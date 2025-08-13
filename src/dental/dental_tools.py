@@ -9,33 +9,33 @@ import json
 import locale
 import httpx
 import asyncio
-# 🚀 PERFORMANCE BOOST: Fuzzy Times für unscharfe Zeitangaben
+# 🚀 PERFORMANCE BOOST: Fuzzy Times for vague time specifications
 FUZZY_TIMES = {
-    "kurz nach 14": "14:15",
-    "kurz nach 2": "14:15",
-    "gegen halb 3": "14:30",
-    "gegen halb 15": "14:30",
-    "später nachmittag": "16:00",
-    "früher nachmittag": "13:00",
-    "früh morgens": "08:00",
-    "spät abends": "19:00",
-    "mittags": "12:00",
-    "gegen mittag": "12:00",
-    "am vormittag": "10:00",
-    "vormittags": "10:00",
-    "nachmittags": "15:00",
-    "am nachmittag": "15:00",
-    "gegen 14": "14:00",
-    "gegen 15": "15:00",
-    "gegen 16": "16:00",
-    "gegen 17": "17:00",
-    "kurz vor 15": "14:45",
-    "kurz vor 16": "15:45",
-    "kurz vor 17": "16:45",
-    "nach dem mittagessen": "13:30",
-    "vor dem mittagessen": "11:30",
-    "nach feierabend": "18:00",
-    "in der mittagspause": "12:30"
+    "shortly after 2": "14:15",
+    "shortly after 2pm": "14:15",
+    "around half past 2": "14:30",
+    "around half 3": "14:30",
+    "late afternoon": "16:00",
+    "early afternoon": "13:00",
+    "early morning": "08:00",
+    "late evening": "19:00",
+    "noon": "12:00",
+    "around noon": "12:00",
+    "in the morning": "10:00",
+    "morning": "10:00",
+    "afternoon": "15:00",
+    "in the afternoon": "15:00",
+    "around 2": "14:00",
+    "around 3": "15:00",
+    "around 4": "16:00",
+    "around 5": "17:00",
+    "just before 3": "14:45",
+    "just before 4": "15:45",
+    "just before 5": "16:45",
+    "after lunch": "13:30",
+    "before lunch": "11:30",
+    "after work": "18:00",
+    "during lunch": "12:30"
 }
 
 # Context Stack für Conversational Repair
@@ -69,7 +69,7 @@ class ContextStack:
         time_patterns = [
             r'(\d{1,2}):(\d{2})',  # 11:30
             r'(\d{1,2})\.(\d{2})',  # 11.30
-            r'(\d{1,2}) uhr',       # 11 uhr
+            r'(\d{1,2}) o'clock',       # 11 o'clock
             r'um (\d{1,2})',        # um 11
         ]
 
@@ -89,47 +89,47 @@ context_stack = ContextStack()
 
 # Clinic knowledge data inline (from original backup)
 CLINIC_INFO = {
-    'name': 'Zahnarztpraxis Dr. Weber',
-    'address': 'Musterstraße 123, 12345 Berlin',
-    'phone': '030 12345678',
-    'email': 'info@zahnarzt-weber.de',
-    'website': 'www.zahnarzt-weber.de',
+    'name': 'Dental Practice Dr. Weber',
+    'address': '123 Main Street, London SW1A 1AA',
+    'phone': '+44 20 7123 4567',
+    'email': 'info@drsmith-dental.co.uk',
+    'website': 'www.drsmith-dental.co.uk',
     'opening_hours': {
         'monday': '08:00-18:00',
         'tuesday': '08:00-18:00',
         'wednesday': '08:00-18:00',
         'thursday': '08:00-18:00',
         'friday': '08:00-16:00',
-        'saturday': 'Geschlossen',
-        'sunday': 'Geschlossen'
+        'saturday': 'closed',
+        'sunday': 'closed'
     }
 }
 
 SERVICES = [
-    'Kontrolluntersuchung',
-    'Zahnreinigung',
+    'check-up',
+    'dental cleaning',
     'Füllungen',
-    'Wurzelbehandlung',
-    'Zahnersatz',
+    'root canal',
+    'dental prosthetics',
     'Implantate',
-    'Kieferorthopädie',
+    'orthodontics',
     'Notfallbehandlung'
 ]
 
 FAQ = {
     'Kosten': 'Die Kosten variieren je nach Behandlung. Kontaktieren Sie uns für ein Angebot.',
-    'Termine': 'Termine können telefonisch oder online gebucht werden.',
-    'Notfall': 'Bei Notfällen rufen Sie bitte sofort an.'
+    'appointments': 'appointments können telefonisch oder online gebucht werden.',
+    'emergency': 'Bei Notfällen rufen Sie Please sofort an.'
 }
 
 APPOINTMENT_TYPES = {
-    'Kontrolluntersuchung': 30,
-    'Zahnreinigung': 60,
+    'check-up': 30,
+    'dental cleaning': 60,
     'Füllungen': 45,
-    'Wurzelbehandlung': 90,
-    'Zahnersatz': 60,
+    'root canal': 90,
+    'dental prosthetics': 60,
     'Implantate': 120,
-    'Kieferorthopädie': 45,
+    'orthodontics': 45,
     'Notfallbehandlung': 30
 }
 
@@ -147,13 +147,13 @@ STAFF = {
 
 # Deutsche Wochentage und Monate
 GERMAN_WEEKDAYS = {
-    0: 'Montag', 1: 'Dienstag', 2: 'Mittwoch', 3: 'Donnerstag',
-    4: 'Freitag', 5: 'Samstag', 6: 'Sonntag'
+    0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday',
+    4: 'Friday', 5: 'Saturday', 6: 'Sunday'
 }
 
 GERMAN_MONTHS = {
-    1: 'Januar', 2: 'Februar', 3: 'März', 4: 'April', 5: 'Mai', 6: 'Juni',
-    7: 'Juli', 8: 'August', 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Dezember'
+    1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June',
+    7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'
 }
 
 def get_current_datetime_info():
@@ -188,8 +188,8 @@ def get_current_datetime_info():
         'time_iso': now.strftime("%H:%M"),     # ISO-Format für Datenbank
         
         # ✅ AUTO-DATUM: Automatische Datum-Einfügung für Antworten
-        'auto_date': f"Heute ist {weekday_german}, der {now.day}. {month_german} {now.year}",
-        'auto_time': f"Es ist {now.hour:02d}:{now.minute:02d} Uhr",
+        'auto_date': f"today ist {weekday_german}, der {now.day}. {month_german} {now.year}",
+        'auto_time': f"Es ist {now.hour:02d}:{now.minute:02d} o'clock",
 
         # Deutsche Bezeichnungen
         'weekday': weekday_german,
@@ -204,22 +204,22 @@ def get_current_datetime_info():
         'weekday_num': now.weekday(),
 
         # Berechnete Werte
-        'is_weekend': now.weekday() >= 5,  # Samstag=5, Sonntag=6
+        'is_weekend': now.weekday() >= 5,  # Saturday=5, Sunday=6
         'tomorrow_weekday': GERMAN_WEEKDAYS[(now.weekday() + 1) % 7]
     }
 
     # ✅ RELATIVE DATUMS-BERECHNUNGEN hinzufügen
-    morgen = now + timedelta(days=1)
+    tomorrow = now + timedelta(days=1)
     übermorgen = now + timedelta(days=2)
     
     # 🔧 DEBUG: Logging für Datum-Debugging
-    logging.debug(f"DATUM-DEBUG: Morgen: {morgen.day}. {GERMAN_MONTHS[morgen.month]} {morgen.year}")
+    logging.debug(f"DATUM-DEBUG: tomorrow: {tomorrow.day}. {GERMAN_MONTHS[tomorrow.month]} {tomorrow.year}")
     logging.debug(f"DATUM-DEBUG: Übermorgen: {übermorgen.day}. {GERMAN_MONTHS[übermorgen.month]} {übermorgen.year}")
 
-    # Nächste Woche = Montag der nächsten Woche
+    # Nächste Woche = Monday der nächsten Woche
     tage_bis_naechster_montag = (7 - now.weekday()) % 7
-    if tage_bis_naechster_montag == 0:  # Heute ist Montag
-        tage_bis_naechster_montag = 7  # Nächster Montag
+    if tage_bis_naechster_montag == 0:  # today ist Monday
+        tage_bis_naechster_montag = 7  # Nächster Monday
     naechste_woche = now + timedelta(days=tage_bis_naechster_montag)
 
     # Kalenderwoche berechnen
@@ -228,8 +228,8 @@ def get_current_datetime_info():
     # Erweiterte Informationen hinzufügen
     date_info.update({
         # Relative Daten
-        'morgen': f"{GERMAN_WEEKDAYS[morgen.weekday()]}, {morgen.day}. {GERMAN_MONTHS[morgen.month]} {morgen.year}",
-        'morgen_iso': morgen.strftime("%Y-%m-%d"),
+        'tomorrow': f"{GERMAN_WEEKDAYS[tomorrow.weekday()]}, {tomorrow.day}. {GERMAN_MONTHS[tomorrow.month]} {tomorrow.year}",
+        'morgen_iso': tomorrow.strftime("%Y-%m-%d"),
         'übermorgen': f"{GERMAN_WEEKDAYS[übermorgen.weekday()]}, {übermorgen.day}. {GERMAN_MONTHS[übermorgen.month]} {übermorgen.year}",
         'übermorgen_iso': übermorgen.strftime("%Y-%m-%d"),
         'nächste_woche': f"{GERMAN_WEEKDAYS[naechste_woche.weekday()]}, {naechste_woche.day}. {GERMAN_MONTHS[naechste_woche.month]} {naechste_woche.year}",
@@ -237,7 +237,7 @@ def get_current_datetime_info():
         'kalenderwoche': kalenderwoche,
 
         # datetime-Objekte für weitere Berechnungen
-        'morgen_datetime': morgen,
+        'morgen_datetime': tomorrow,
         'übermorgen_datetime': übermorgen,
         'nächste_woche_datetime': naechste_woche
     })
@@ -251,13 +251,13 @@ def get_intelligente_medizinische_nachfragen(symptom_oder_grund: str) -> str:
     """
     symptom_oder_grund = symptom_oder_grund.lower()
 
-    # 🦷 SCHMERZEN - Natürliche Nachfragen
-    if any(word in symptom_oder_grund for word in ['schmerz', 'schmerzen', 'weh', 'tut weh', 'ziehen', 'stechen', 'pochen']):
-        return "Oh, das tut mir leid zu hören, dass Sie Schmerzen haben. Seit wann haben Sie denn die Beschwerden? Und haben Sie schon Schmerzmittel genommen?"
+    # 🦷 pain - Natürliche Nachfragen
+    if any(word in symptom_oder_grund for word in ['schmerz', 'pain', 'weh', 'tut weh', 'ziehen', 'stechen', 'pochen']):
+        return "Oh, das tut mir leid zu hören, dass Sie pain haben. Seit wann haben Sie denn die Beschwerden? Und haben Sie schon Schmerzmittel genommen?"
 
     # 🦷 IMPLANTAT - Natürliche Nachfragen
-    elif any(word in symptom_oder_grund for word in ['implantat', 'implant', 'zahnersatz', 'künstlicher zahn']):
-        return "Ah, es geht um Ihr Implantat. Ist das nur für eine Kontrolluntersuchung oder haben Sie Probleme damit?"
+    elif any(word in symptom_oder_grund for word in ['implantat', 'implant', 'dental prosthetics', 'künstlicher zahn']):
+        return "Ah, es geht um Ihr Implantat. Ist das nur für eine check-up oder haben Sie Probleme damit?"
 
     # 🦷 ZAHNFLEISCH - Natürliche Nachfragen
     elif any(word in symptom_oder_grund for word in ['zahnfleisch', 'gingiva', 'blut', 'blutet', 'geschwollen', 'entzündet', 'parodont']):
@@ -265,11 +265,11 @@ def get_intelligente_medizinische_nachfragen(symptom_oder_grund: str) -> str:
 
     # 🦷 WEISHEITSZÄHNE - Natürliche Nachfragen
     elif any(word in symptom_oder_grund for word in ['weisheitszahn', 'weisheitszähne', 'achter', '8er']):
-        return "Ach so, es geht um die Weisheitszähne. Haben Sie Schmerzen oder möchten Sie sie entfernen lassen?"
+        return "Ach so, es geht um die Weisheitszähne. Haben Sie pain oder möchten Sie sie entfernen lassen?"
 
-    # 🦷 KRONE/FÜLLUNG - Natürliche Nachfragen
-    elif any(word in symptom_oder_grund for word in ['krone', 'füllung', 'plombe', 'inlay', 'onlay', 'abgebrochen', 'rausgefallen']):
-        return "Oh, ist etwas mit einer Füllung oder Krone passiert? Ist sie abgebrochen oder rausgefallen?"
+    # 🦷 KRONE/filling - Natürliche Nachfragen
+    elif any(word in symptom_oder_grund for word in ['krone', 'filling', 'plombe', 'inlay', 'onlay', 'abgebrochen', 'rausgefallen']):
+        return "Oh, ist etwas mit einer filling oder Krone passiert? Ist sie abgebrochen oder rausgefallen?"
 
     # 🦷 KONTROLLE/PROPHYLAXE - Freundliche Nachfragen
     elif any(word in symptom_oder_grund for word in ['kontrolle', 'untersuchung', 'check', 'prophylaxe', 'reinigung', 'vorsorge']):
@@ -279,13 +279,13 @@ def get_intelligente_medizinische_nachfragen(symptom_oder_grund: str) -> str:
     elif any(word in symptom_oder_grund for word in ['bleaching', 'aufhellen', 'weiß', 'ästhetik', 'schön', 'verfärb']):
         return "Schön, dass Sie sich für ästhetische Zahnbehandlung interessieren. Möchten Sie Ihre Zähne aufhellen lassen?"
 
-    # 🚨 NOTFALL - Sofortige Hilfe
-    elif any(word in symptom_oder_grund for word in ['notfall', 'dringend', 'sofort', 'starke schmerzen', 'unerträglich', 'geschwollen']):
-        return "Das klingt nach einem Notfall! Haben Sie starke Schmerzen? Ich suche sofort einen dringenden Termin für Sie."
+    # 🚨 emergency - Sofortige Hilfe
+    elif any(word in symptom_oder_grund for word in ['emergency', 'urgent', 'sofort', 'starke pain', 'unerträglich', 'geschwollen']):
+        return "Das klingt nach einem emergency! Haben Sie starke pain? Ich suche sofort einen dringenden appointment für Sie."
 
     # 🦷 ALLGEMEINE BEHANDLUNG - Standard-Nachfragen
     else:
-        return "Gerne helfe ich Ihnen weiter. Können Sie mir sagen, was für Beschwerden Sie haben oder welche Behandlung Sie benötigen?"
+        return "Gladly helfe ich Ihnen weiter. Können Sie mir sagen, was für Beschwerden Sie haben oder welche Behandlung Sie benötigen?"
 
 def validate_and_parse_datetime(date_str: str, time_str: str):
     """
@@ -299,30 +299,30 @@ def validate_and_parse_datetime(date_str: str, time_str: str):
         # Prüfe ob Datum in der Zukunft liegt
         now = datetime.now()
         if appointment_datetime <= now:
-            return None, "Der Termin muss in der Zukunft liegen."
+            return None, "Der appointment muss in der Zukunft liegen."
 
         # Prüfe Geschäftszeiten
         weekday = appointment_datetime.weekday()
         hour = appointment_datetime.hour
 
-        # Sonntag = 6
+        # Sunday = 6
         if weekday == 6:
-            return None, "Sonntags sind wir geschlossen."
+            return None, "Sonntags sind wir closed."
 
-        # Samstag = 5 (nur vormittags)
+        # Saturday = 5 (nur vormittags)
         if weekday == 5 and (hour < 9 or hour >= 13):
-            return None, "Samstags sind wir nur von 9:00-12:30 geöffnet."
+            return None, "Samstags sind wir nur von 9:00-12:30 open."
 
-        # Montag-Freitag
+        # Monday-Friday
         if weekday < 5:
             if hour < 9 or hour >= 18:
-                return None, "Unsere Öffnungszeiten sind Mo-Do: 9:00-17:30, Fr: 9:00-16:00."
+                return None, "Unsere opening hours sind Mo-Do: 9:00-17:30, Fr: 9:00-16:00."
             if 11 < hour < 14:  # Mittagspause
-                return None, "Während der Mittagspause (11:30-14:00) sind keine Termine möglich."
+                return None, "Während der Mittagspause (11:30-14:00) sind keine appointments möglich."
 
-        # Freitag (nur bis 16:00)
+        # Friday (nur bis 16:00)
         if weekday == 4 and hour >= 16:
-            return None, "Freitags sind wir nur bis 16:00 geöffnet."
+            return None, "Freitags sind wir nur bis 16:00 open."
 
         return appointment_datetime, None
 
@@ -379,10 +379,10 @@ class CallManager:
         time_info = get_current_datetime_info()
         summary = f"Gespräch beendet um {time_info['time_formatted']}\n"
         if self.patient_info:
-            summary += f"Patient: {self.patient_info.get('name', 'N/A')}\n"
+            summary += f"patient: {self.patient_info.get('name', 'N/A')}\n"
             summary += f"Telefon: {self.patient_info.get('phone', 'N/A')}\n"
         if self.scheduled_appointment:
-            summary += f"Termin gebucht: {self.scheduled_appointment}\n"
+            summary += f"appointment gebucht: {self.scheduled_appointment}\n"
         if self.notes:
             summary += f"Notizen: {', '.join(self.notes)}\n"
         return summary
@@ -484,22 +484,22 @@ async def get_clinic_info(
     info_type: str = "general"
 ) -> str:
     """
-    Stellt Informationen über die Zahnarztpraxis bereit.
+    Stellt Informationen über die Dental Practice bereit.
     info_type kann sein: 'general', 'hours', 'contact', 'location', 'parking'
     """
     try:
         if info_type == "general":
             return f"""
-Zahnarztpraxis Dr. Weber
+Dental Practice Dr. Weber
 Adresse: {CLINIC_INFO['address']}
 Telefon: {CLINIC_INFO['phone']}
 E-Mail: {CLINIC_INFO['email']}
-Öffnungszeiten: Montag-Freitag 9:00-18:00, Samstag 9:00-13:00
+opening hours: Monday-Friday 9:00-18:00, Saturday 9:00-13:00
 {CLINIC_INFO['emergency_hours']}
 {CLINIC_INFO['parking']}
 """
         elif info_type == "hours":
-            hours_text = "Öffnungszeiten:\n"
+            hours_text = "opening hours:\n"
             for day, hours in CLINIC_INFO['hours'].items():
                 hours_text += f"{day.capitalize()}: {hours}\n"
             hours_text += f"\n{CLINIC_INFO['emergency_hours']}"
@@ -507,7 +507,7 @@ E-Mail: {CLINIC_INFO['email']}
         
         elif info_type == "contact":
             return f"""
-Kontakt Zahnarztpraxis Dr. Weber:
+Kontakt Dental Practice Dr. Weber:
 Telefon: {CLINIC_INFO['phone']}
 E-Mail: {CLINIC_INFO['email']}
 Website: {CLINIC_INFO['website']}
@@ -519,11 +519,11 @@ Indirizzo: {CLINIC_INFO['address']}
 {CLINIC_INFO['accessibility']}
 """
         else:
-            return "Informationstyp nicht erkannt. Ich kann allgemeine Informationen, Öffnungszeiten, Kontakt oder Standort bereitstellen."
+            return "Informationstyp nicht erkannt. Ich kann allgemeine Informationen, opening hours, Kontakt oder Standort bereitstellen."
             
     except Exception as e:
         logging.error(f"Fehler beim Abrufen der Praxisinformationen: {e}")
-        return "Entschuldigung, es ist ein Fehler beim Abrufen der Informationen aufgetreten."
+        return "Sorry, es ist ein Fehler beim Abrufen der Informationen aufgetreten."
 
 @function_tool()
 async def get_services_info(
@@ -532,24 +532,24 @@ async def get_services_info(
 ) -> str:
     """
     Bietet Informationen über die angebotenen zahnärztlichen Leistungen.
-    service_type kann sein: 'all', 'allgemeine_zahnheilkunde', 'zahnhygiene', 'kieferorthopaedie', 'implantologie', 'aesthetische_zahnheilkunde', 'endodontie', 'oralchirurgie', 'prothetik'
+    service_type kann sein: 'all', 'allgemeine_zahnheilkunde', 'dental hygiene', 'kieferorthopaedie', 'implantologie', 'aesthetische_zahnheilkunde', 'endodontics', 'oralchirurgie', 'prothetik'
     """
     try:
         if service_type == "all":
-            services_text = "Leistungen unserer Zahnarztpraxis:\n\n"
+            services_text = "Leistungen unserer Dental Practice:\n\n"
             # Da SERVICES eine Liste ist, verwenden wir die deutsche Liste
             for service in SERVICES:
                 services_text += f"• {service}\n"
             return services_text
         
         elif service_type in SERVICES:
-            return f"Leistung: {service_type}\nWeitere Details erhalten Sie gerne bei einem Beratungstermin."
+            return f"Leistung: {service_type}\nWeitere Details erhalten Sie Gladly bei einem Beratungstermin."
         else:
-            return "Leistung nicht gefunden. Unsere Hauptleistungen sind: Allgemeine Zahnheilkunde, Zahnhygiene, Kieferorthopädie, Implantologie, Ästhetische Zahnheilkunde, Endodontie, Oralchirurgie und Prothetik."
+            return "Leistung nicht gefunden. Unsere Hauptleistungen sind: Allgemeine Zahnheilkunde, dental hygiene, orthodontics, Implantologie, Ästhetische Zahnheilkunde, endodontics, Oralchirurgie und Prothetik."
             
     except Exception as e:
         logging.error(f"Fehler beim Abrufen der Leistungsinformationen: {e}")
-        return "Entschuldigung, es gab einen Fehler beim Abrufen der Leistungsinformationen."
+        return "Sorry, es gab einen Fehler beim Abrufen der Leistungsinformationen."
 
 @function_tool()
 async def answer_faq(
@@ -574,16 +574,16 @@ async def answer_faq(
         
     except Exception as e:
         logging.error(f"Fehler beim Abrufen der FAQ: {e}")
-        return "Entschuldigung, es gab einen Fehler beim Abrufen der Informationen."
+        return "Sorry, es gab einen Fehler beim Abrufen der Informationen."
 
 @function_tool()
 async def check_availability(
     context: RunContext,
     date: str,
-    appointment_type: str = "kontrolluntersuchung"
+    appointment_type: str = "check-up"
 ) -> str:
     """
-    Prüft die Verfügbarkeit für einen Termin an einem bestimmten Datum.
+    Prüft die Verfügbarkeit für einen appointment an einem bestimmten Datum.
     date Format: YYYY-MM-DD
     appointment_type: Art des gewünschten Termins
     """
@@ -593,35 +593,35 @@ async def check_availability(
         
         # Prüfe ob das Datum in der Vergangenheit liegt
         if target_date.date() < datetime.now().date():
-            return "Entschuldigung, ich kann keine Termine für vergangene Daten buchen."
+            return "Sorry, ich kann keine appointments für vergangene Daten buchen."
 
-        # Prüfe ob es Sonntag ist (Praxis geschlossen)
-        if target_date.weekday() == 6:  # Sonntag
-            return "Entschuldigung, die Praxis ist sonntags geschlossen. Kann ich Ihnen einen anderen Tag vorschlagen?"
+        # Prüfe ob es Sunday ist (practice closed)
+        if target_date.weekday() == 6:  # Sunday
+            return "Sorry, die practice ist sonntags closed. Kann ich Ihnen einen anderen Tag vorschlagen?"
 
-        # Prüfe ob es Samstag ist (verkürzte Öffnungszeiten)
-        if target_date.weekday() == 5:  # Samstag
+        # Prüfe ob es Saturday ist (verkürzte opening hours)
+        if target_date.weekday() == 5:  # Saturday
             available_times = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30"]
         else:
             available_times = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
                              "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"]
 
-        # Simuliere bereits belegte Termine
+        # Simuliere bereits belegte appointments
         occupied_slots = appointments_db.get(date, [])
         available_times = [time for time in available_times if time not in occupied_slots]
 
         if available_times:
             return f"Verfügbarkeit für {date}:\nVerfügbare Zeiten: {', '.join(available_times[:6])}"
         else:
-            # Schlage alternative Termine vor
+            # Schlage alternative appointments vor
             next_date = target_date + timedelta(days=1)
-            return f"Entschuldigung, es sind keine Termine verfügbar für {date}. Kann ich Ihnen {next_date.strftime('%Y-%m-%d')} vorschlagen?"
+            return f"Sorry, es sind keine appointments verfügbar für {date}. Kann ich Ihnen {next_date.strftime('%Y-%m-%d')} vorschlagen?"
             
     except ValueError:
-        return "Ungültiges Datumsformat. Bitte verwenden Sie das Format YYYY-MM-DD (z.B. 2024-01-15)."
+        return "Ungültiges Datumsformat. Please verwenden Sie das Format YYYY-MM-DD (z.B. 2024-01-15)."
     except Exception as e:
         logging.error(f"Fehler bei der Verfügbarkeitsprüfung: {e}")
-        return "Entschuldigung, es gab einen Fehler bei der Verfügbarkeitsprüfung."
+        return "Sorry, es gab einen Fehler bei der Verfügbarkeitsprüfung."
 
 @function_tool()
 async def schedule_appointment(
@@ -630,11 +630,11 @@ async def schedule_appointment(
     phone: str,
     date: str,
     time: str,
-    appointment_type: str = "kontrolluntersuchung",
+    appointment_type: str = "check-up",
     notes: str = ""
 ) -> str:
     """
-    Bucht einen neuen Termin.
+    Bucht einen neuen appointment.
     Parameter: Patientenname, Telefon, Datum (YYYY-MM-DD), Uhrzeit (HH:MM), Terminart, zusätzliche Notizen
     """
     try:
@@ -642,7 +642,7 @@ async def schedule_appointment(
         appointment_datetime = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
         
         if appointment_datetime < datetime.now():
-            return "Ich kann keine Termine für vergangene Daten und Uhrzeiten buchen."
+            return "Ich kann keine appointments für vergangene Daten und Uhrzeiten buchen."
         
         # Prüfe ob die Terminart existiert
         if appointment_type not in APPOINTMENT_TYPES:
@@ -664,7 +664,7 @@ async def schedule_appointment(
             "created_at": datetime.now().isoformat()
         }
         
-        # Speichere den Termin
+        # Speichere den appointment
         if date not in appointments_db:
             appointments_db[date] = []
         appointments_db[date].append(time)
@@ -679,25 +679,25 @@ async def schedule_appointment(
         appointment_info = APPOINTMENT_TYPES[appointment_type]
         
         return f"""
-Termin bestätigt!
+appointment bestätigt!
 
 Details:
-• Patient: {patient_name}
+• patient: {patient_name}
 • Datum: {date}
 • Uhrzeit: {time}
 • Art: {appointment_info['name']}
 • Voraussichtliche Dauer: {appointment_info['duration']} Minuten
 • Buchungscode: {appointment_id}
 
-Wir werden Sie am Tag vorher anrufen, um den Termin zu bestätigen.
-Bitte bringen Sie einen Personalausweis und Ihre Versichertenkarte mit.
+Wir werden Sie am Tag vorher anrufen, um den appointment zu bestätigen.
+Please bringen Sie einen Personalausweis und Ihre Versichertenkarte mit.
 """
         
     except ValueError:
         return "Formato data o ora non valido. Utilizzare YYYY-MM-DD per la data e HH:MM per l'ora."
     except Exception as e:
         logging.error(f"Fehler bei der Buchung: {e}")
-        return "Entschuldigung, es gab einen Fehler bei der Buchung. Bitte versuchen Sie es erneut."
+        return "Sorry, es gab einen Fehler bei der Buchung. Please versuchen Sie es erneut."
 
 @function_tool()
 async def collect_patient_info(
@@ -736,14 +736,14 @@ Patienteninformationen registriert:
 • Telefon: {phone}
 • E-Mail: {email if email else 'Nicht angegeben'}
 
-Vielen Dank für Ihre Angaben.
+Thank you very much für Ihre Angaben.
 Beim ersten Besuch bitten wir Sie, einen detaillierteren Anamnesebogen auszufüllen.
-Bitte bringen Sie einen Personalausweis, Ihre Versichertenkarte und eventuelle frühere Röntgenbilder mit.
+Please bringen Sie einen Personalausweis, Ihre Versichertenkarte und eventuelle frühere Röntgenbilder mit.
 """
         
     except Exception as e:
         logging.error(f"Fehler beim Sammeln der Patientendaten: {e}")
-        return "Entschuldigung, es gab einen Fehler beim Speichern der Informationen."
+        return "Sorry, es gab einen Fehler beim Speichern der Informationen."
 
 @function_tool()
 async def cancel_appointment(
@@ -754,33 +754,33 @@ async def cancel_appointment(
     time: str = ""
 ) -> str:
     """
-    Storniert einen bestehenden Termin.
+    Storniert einen bestehenden appointment.
     Parameter: Patientenname, Telefon, Datum (YYYY-MM-DD), Uhrzeit (optional)
     """
     try:
-        # Suche den Termin
+        # Suche den appointment
         if date in appointments_db:
             if time and time in appointments_db[date]:
                 appointments_db[date].remove(time)
                 return f"""
-Termin erfolgreich storniert.
+appointment erfolgreich storniert.
 
 Stornierungsdetails:
-• Patient: {patient_name}
+• patient: {patient_name}
 • Datum: {date}
 • Uhrzeit: {time}
 
-Die Stornierung wurde registriert. Falls Sie einen neuen Termin vereinbaren möchten, helfe ich Ihnen gerne dabei, ein neues Datum zu finden.
+Die Stornierung wurde registriert. Falls Sie einen neuen appointment vereinbaren möchten, helfe ich Ihnen Gladly dabei, ein neues Datum zu finden.
 """
             elif not time:
                 # Se non è specificata l'ora, mostra gli appuntamenti per quella data
-                return f"Ich habe Termine für {date} gefunden. Können Sie die Uhrzeit angeben, die storniert werden soll?"
+                return f"Ich habe appointments für {date} gefunden. Können Sie die Uhrzeit angeben, die storniert werden soll?"
 
-        return f"Ich habe keine Termine für {patient_name} am {date} gefunden. Können Sie die Daten überprüfen?"
+        return f"Ich habe keine appointments für {patient_name} am {date} gefunden. Können Sie die Daten überprüfen?"
 
     except Exception as e:
         logging.error(f"Fehler bei der Stornierung: {e}")
-        return "Entschuldigung, es gab einen Fehler bei der Stornierung."
+        return "Sorry, es gab einen Fehler bei der Stornierung."
 
 @function_tool()
 async def reschedule_appointment(
@@ -793,13 +793,13 @@ async def reschedule_appointment(
     new_time: str
 ) -> str:
     """
-    Verlegt einen bestehenden Termin.
+    Verlegt einen bestehenden appointment.
     Parameter: Name, Telefon, altes Datum, alte Uhrzeit, neues Datum, neue Uhrzeit
     """
     try:
-        # Prüfe ob der alte Termin existiert
+        # Prüfe ob der alte appointment existiert
         if old_date not in appointments_db or old_time not in appointments_db[old_date]:
-            return f"Ich habe den ursprünglichen Termin für {patient_name} am {old_date} um {old_time} nicht gefunden."
+            return f"Ich habe den ursprünglichen appointment für {patient_name} am {old_date} um {old_time} nicht gefunden."
 
         # Prüfe Verfügbarkeit des neuen Datums/Uhrzeit
         new_datetime = datetime.strptime(f"{new_date} {new_time}", "%Y-%m-%d %H:%M")
@@ -808,37 +808,37 @@ async def reschedule_appointment(
 
         # Prüfe ob der neue Slot verfügbar ist
         if new_date in appointments_db and new_time in appointments_db[new_date]:
-            return f"Entschuldigung, der Slot am {new_date} um {new_time} ist bereits belegt. Kann ich Ihnen andere Zeiten vorschlagen?"
+            return f"Sorry, der Slot am {new_date} um {new_time} ist bereits belegt. Kann ich Ihnen andere Zeiten vorschlagen?"
 
         # Führe die Verlegung durch
-        # Entferne den alten Termin
+        # Entferne den alten appointment
         appointments_db[old_date].remove(old_time)
 
-        # Füge den neuen Termin hinzu
+        # Füge den neuen appointment hinzu
         if new_date not in appointments_db:
             appointments_db[new_date] = []
         appointments_db[new_date].append(new_time)
 
         return f"""
-Termin erfolgreich verlegt!
+appointment erfolgreich verlegt!
 
-Alter Termin:
+Alter appointment:
 • Datum: {old_date}
 • Uhrzeit: {old_time}
 
-Neuer Termin:
-• Patient: {patient_name}
+Neuer appointment:
+• patient: {patient_name}
 • Datum: {new_date}
 • Uhrzeit: {new_time}
 
-Wir werden Sie am Tag vorher anrufen, um den neuen Termin zu bestätigen.
+Wir werden Sie am Tag vorher anrufen, um den neuen appointment zu bestätigen.
 """
 
     except ValueError:
         return "Ungültiges Datums- oder Uhrzeitformat. Verwenden Sie YYYY-MM-DD für das Datum und HH:MM für die Uhrzeit."
     except Exception as e:
         logging.error(f"Fehler bei der Terminverlegung: {e}")
-        return "Entschuldigung, es gab einen Fehler bei der Terminverlegung."
+        return "Sorry, es gab einen Fehler bei der Terminverlegung."
 
 @function_tool()
 async def get_insurance_info(
@@ -879,7 +879,7 @@ Assicurazioni sanitarie accettate:
 
     except Exception as e:
         logging.error(f"Fehler bei Versicherungsinformationen: {e}")
-        return "Entschuldigung, es gab einen Fehler beim Abrufen der Versicherungsinformationen."
+        return "Sorry, es gab einen Fehler beim Abrufen der Versicherungsinformationen."
 
 @function_tool()
 async def get_payment_info(
@@ -902,17 +902,17 @@ Für teure Behandlungen können wir während des Besuchs individuelle Zahlungspl
 
     except Exception as e:
         logging.error(f"Fehler bei Zahlungsinformationen: {e}")
-        return "Entschuldigung, es gab einen Fehler beim Abrufen der Zahlungsinformationen."
+        return "Sorry, es gab einen Fehler beim Abrufen der Zahlungsinformationen."
 
 @function_tool()
-async def get_naechste_freie_termine(
+async def get_next_available_appointments(
     context: RunContext,
     ab_datum: str = "",
-    behandlungsart: str = "Kontrolluntersuchung",
+    behandlungsart: str = "check-up",
     anzahl_vorschlaege: int = 5
 ) -> str:
     """
-    Findet die nächsten verfügbaren Termine für Patienten.
+    Findet die nächsten verfügbaren appointments für patients.
     ab_datum: Ab welchem Datum suchen (YYYY-MM-DD)
     behandlungsart: Art der Behandlung
     anzahl_vorschlaege: Anzahl der Vorschläge
@@ -926,29 +926,29 @@ async def get_naechste_freie_termine(
         verfuegbare_termine = appointment_manager.get_verfuegbare_termine(ab_datum, anzahl_vorschlaege)
         
         if not verfuegbare_termine:
-            return "Es tut mir leid, aber in den nächsten 30 Tagen sind keine Termine verfügbar. Soll ich weiter in die Zukunft schauen?"
+            return "Es tut mir leid, aber in den nächsten 30 Tagen sind keine appointments verfügbar. Soll ich weiter in die Zukunft schauen?"
         
-        response = f"🗓️ **Die nächsten verfügbaren Termine für {behandlungsart}:**\n\n"
+        response = f"🗓️ **Die nächsten verfügbaren appointments für {behandlungsart}:**\n\n"
         
-        for i, termin in enumerate(verfuegbare_termine, 1):
-            response += f"{i}. {termin['anzeige']}\n"
+        for i, appointment in enumerate(verfuegbare_termine, 1):
+            response += f"{i}. {appointment['anzeige']}\n"
         
-        response += f"\nWelcher Termin würde Ihnen am besten passen?"
+        response += f"\nWelcher appointment würde Ihnen am besten passen?"
         
         return response
         
     except Exception as e:
         logging.error(f"Fehler bei der Terminsuche: {e}")
-        return "Entschuldigung, es gab ein Problem bei der Terminsuche."
+        return "Sorry, es gab ein Problem bei der Terminsuche."
 
 @function_tool()
-async def get_tagesplan_arzt(
+async def get_doctor_daily_schedule(
     context: RunContext,
     datum: str,
     detailliert: bool = True
 ) -> str:
     """
-    Zeigt den Tagesplan für den Arzt für einen bestimmten Tag.
+    Zeigt den Tagesplan für den doctor für einen bestimmten Tag.
     datum: YYYY-MM-DD Format
     detailliert: True für detaillierte Ansicht, False für Übersicht
     """
@@ -957,16 +957,16 @@ async def get_tagesplan_arzt(
         
     except Exception as e:
         logging.error(f"Fehler beim Abrufen des Tagesplans: {e}")
-        return "Entschuldigung, es gab ein Problem beim Abrufen des Tagesplans."
+        return "Sorry, es gab ein Problem beim Abrufen des Tagesplans."
 
 @function_tool()
-async def get_wochenuebersicht_arzt(
+async def get_doctor_weekly_overview(
     context: RunContext,
     start_datum: str,
     fuer_arzt: bool = True
 ) -> str:
     """
-    Zeigt die Wochenübersicht der Termine für den Arzt.
+    Zeigt die Wochenübersicht der appointments für den doctor.
     start_datum: Startdatum der Woche (YYYY-MM-DD)
     fuer_arzt: True für Arztansicht, False für Patienteninfo
     """
@@ -975,10 +975,10 @@ async def get_wochenuebersicht_arzt(
         
     except Exception as e:
         logging.error(f"Fehler bei Wochenübersicht: {e}")
-        return "Entschuldigung, es gab ein Problem bei der Wochenübersicht."
+        return "Sorry, es gab ein Problem bei der Wochenübersicht."
 
 @function_tool()
-async def termin_buchen_erweitert(
+async def book_appointment_extended(
     context: RunContext,
     patient_name: str,
     telefon: str,
@@ -990,8 +990,8 @@ async def termin_buchen_erweitert(
     notizen: str = ""
 ) -> str:
     """
-    Bucht einen Termin mit erweiterten Informationen.
-    patient_name: Name des Patienten
+    Bucht einen appointment mit erweiterten Informationen.
+    patient_name: Name des patients
     telefon: Telefonnummer
     datum: Datum im Format YYYY-MM-DD
     uhrzeit: Uhrzeit im Format HH:MM
@@ -1008,131 +1008,131 @@ async def termin_buchen_erweitert(
         
     except Exception as e:
         logging.error(f"Fehler beim Buchen des Termins: {e}")
-        return f"Entschuldigung, es gab ein Problem beim Buchen des Termins: {str(e)}"
+        return f"Sorry, es gab ein Problem beim Buchen des Termins: {str(e)}"
 
 @function_tool()
-async def get_patientenhistorie(
+async def get_patient_history(
     context: RunContext,
     telefon: str
 ) -> str:
     """
-    Zeigt die Terminhistorie eines Patienten.
-    telefon: Telefonnummer des Patienten
+    Zeigt die Terminhistorie eines patients.
+    telefon: Telefonnummer des patients
     """
     try:
-        return appointment_manager.get_patientenhistorie(telefon)
+        return appointment_manager.get_patient_history(telefon)
         
     except Exception as e:
         logging.error(f"Fehler bei Patientenhistorie: {e}")
-        return "Entschuldigung, es gab ein Problem beim Abrufen der Patientenhistorie."
+        return "Sorry, es gab ein Problem beim Abrufen der Patientenhistorie."
 
 @function_tool()
-async def termine_suchen_praxis(
+async def search_practice_appointments(
     context: RunContext,
     suchbegriff: str,
     zeitraum: str = "naechste_woche"
 ) -> str:
     """
     Sucht nach Terminen - NUR für Praxispersonal/Verwaltung.
-    NICHT für Patienten - Patienten sollen 'meine_termine_finden' verwenden.
+    NICHT für patients - patients sollen 'find_my_appointments' verwenden.
     suchbegriff: Suchbegriff (Patientenname, Telefon, Behandlungsart)
-    zeitraum: Zeitraum (heute, morgen, naechste_woche, naechster_monat)
+    zeitraum: Zeitraum (today, tomorrow, naechste_woche, naechster_monat)
     """
     try:
         # Diese Funktion ist für Praxisverwaltung gedacht
         return appointment_manager.termin_suchen(suchbegriff, zeitraum)
 
     except Exception as e:
-        logging.error(f"Fehler bei der Praxis-Terminsuche: {e}")
-        return "Entschuldigung, es gab ein Problem bei der Terminsuche."
+        logging.error(f"Fehler bei der practice-Terminsuche: {e}")
+        return "Sorry, es gab ein Problem bei der Terminsuche."
 
 @function_tool()
-async def meine_termine_finden(
+async def find_my_appointments(
     context: RunContext,
     patient_name: str = "",
     telefon: str = "",
     zeitraum: str = "zukunft"
 ) -> str:
     """
-    Findet NUR IHRE persönlichen Termine - nicht die anderer Patienten.
+    Findet NUR IHRE persönlichen appointments - nicht die anderer patients.
     Diese Funktion ist für den aktuellen Anrufer/Benutzer gedacht.
     patient_name: IHR Name
     telefon: IHRE Telefonnummer
-    zeitraum: Zeitraum (zukunft, alle, heute, diese_woche, naechster_monat)
+    zeitraum: Zeitraum (zukunft, alle, today, diese_woche, naechster_monat)
     """
     try:
         if not patient_name and not telefon:
-            return "Um Ihre persönlichen Termine zu finden, benötige ich Ihren Namen oder Ihre Telefonnummer. Wie heißen Sie?"
+            return "Um Ihre persönlichen appointments zu finden, benötige ich Ihren Namen oder Ihre Telefonnummer. Wie heißen Sie?"
 
         # Suche nach IHREN Terminen
         suchbegriff = patient_name if patient_name else telefon
-        termine = appointment_manager.termin_suchen(suchbegriff, zeitraum)
+        appointments = appointment_manager.termin_suchen(suchbegriff, zeitraum)
 
-        if "keine Termine gefunden" in termine.lower():
-            response = f"📅 **Keine Termine für Sie gefunden**\n\n"
+        if "keine appointments gefunden" in appointments.lower():
+            response = f"📅 **Keine appointments für Sie gefunden**\n\n"
             if patient_name:
                 response += f"Für Ihren Namen '{patient_name}' "
             if telefon:
                 response += f"Für Ihre Telefonnummer '{telefon}' "
-            response += f"wurden keine Termine im Zeitraum '{zeitraum}' gefunden.\n\n"
+            response += f"wurden keine appointments im Zeitraum '{zeitraum}' gefunden.\n\n"
             response += "💡 **Möchten Sie:**\n"
-            response += "• Einen neuen Termin vereinbaren?\n"
+            response += "• Einen neuen appointment vereinbaren?\n"
             response += "• Prüfen, ob Sie unter einem anderen Namen registriert sind?\n"
             response += "• In einem anderen Zeitraum suchen?"
             return response
 
-        # IHRE Termine gefunden
-        response = f"📅 **Ihre persönlichen Termine**\n\n"
+        # IHRE appointments gefunden
+        response = f"📅 **Ihre persönlichen appointments**\n\n"
         if patient_name:
             response += f"👤 **Ihr Name:** {patient_name}\n"
         if telefon:
             response += f"📞 **Ihre Telefonnummer:** {telefon}\n"
         response += f"📆 **Zeitraum:** {zeitraum}\n\n"
-        response += termine
+        response += appointments
         response += f"\n\n💡 **Benötigen Sie Änderungen an Ihren Terminen?**"
 
         return response
 
     except Exception as e:
-        logging.error(f"Fehler beim Finden Ihrer persönlichen Termine: {e}")
-        return "Entschuldigung, es gab ein Problem beim Suchen Ihrer persönlichen Termine. Bitte versuchen Sie es erneut."
+        logging.error(f"Fehler beim Finden Ihrer persönlichen appointments: {e}")
+        return "Sorry, es gab ein Problem beim Suchen Ihrer persönlichen appointments. Please versuchen Sie es erneut."
 
 @function_tool()
-async def get_praxis_statistiken(
+async def get_practice_statistics(
     context: RunContext,
     zeitraum: str = "diese_woche"
 ) -> str:
     """
-    Zeigt Statistiken für die Praxis.
-    zeitraum: Zeitraum (heute, diese_woche, diesen_monat)
+    Zeigt Statistiken für die practice.
+    zeitraum: Zeitraum (today, diese_woche, diesen_monat)
     """
     try:
         return appointment_manager.get_statistiken(zeitraum)
         
     except Exception as e:
         logging.error(f"Fehler bei Statistiken: {e}")
-        return "Entschuldigung, es gab ein Problem beim Abrufen der Statistiken."
+        return "Sorry, es gab ein Problem beim Abrufen der Statistiken."
 
 @function_tool()
-async def termin_absagen(
+async def cancel_appointment_by_id(
     context: RunContext,
     termin_id: int,
     grund: str = ""
 ) -> str:
     """
-    Sagt einen Termin ab.
+    Sagt einen appointment ab.
     termin_id: ID des Termins
     grund: Grund der Absage (optional)
     """
     try:
-        return appointment_manager.termin_absagen(termin_id, grund)
+        return appointment_manager.cancel_appointment_by_id(termin_id, grund)
         
     except Exception as e:
         logging.error(f"Fehler beim Absagen des Termins: {e}")
-        return f"Entschuldigung, es gab ein Problem beim Absagen des Termins: {str(e)}"
+        return f"Sorry, es gab ein Problem beim Absagen des Termins: {str(e)}"
 
 @function_tool()
-async def check_verfuegbarkeit_erweitert(
+async def check_availability_extended(
     context: RunContext,
     datum: str,
     uhrzeit: str = ""
@@ -1146,23 +1146,23 @@ async def check_verfuegbarkeit_erweitert(
         if uhrzeit:
             ist_frei = appointment_manager.ist_verfuegbar(datum, uhrzeit)
             if ist_frei:
-                return f"Der Termin am {datum} um {uhrzeit} ist verfügbar!"
+                return f"Der appointment am {datum} um {uhrzeit} ist verfügbar!"
             else:
-                return f"Der Termin am {datum} um {uhrzeit} ist bereits belegt."
+                return f"Der appointment am {datum} um {uhrzeit} ist bereits belegt."
         else:
             # Zeige alle verfügbaren Zeiten für den Tag
             verfuegbare_zeiten = appointment_manager.get_verfuegbare_termine_tag(datum)
             if verfuegbare_zeiten:
                 return f"Verfügbare Zeiten am {datum}:\n" + "\n".join(f"• {zeit}" for zeit in verfuegbare_zeiten)
             else:
-                return f"Am {datum} sind keine Termine verfügbar."
+                return f"Am {datum} sind keine appointments verfügbar."
         
     except Exception as e:
         logging.error(f"Fehler bei Verfügbarkeitsprüfung: {e}")
-        return "Entschuldigung, es gab ein Problem bei der Verfügbarkeitsprüfung."
+        return "Sorry, es gab ein Problem bei der Verfügbarkeitsprüfung."
 
 @function_tool()
-async def parse_terminwunsch(
+async def parse_appointment_request(
     context: RunContext,
     text: str
 ) -> str:
@@ -1181,15 +1181,15 @@ async def parse_terminwunsch(
         
         # Zusätzliche Kontextinformationen
         if kontext["ist_heute_arbeitstag"] and datum == kontext.get("aktuelles_datum"):
-            response += f"ℹ️ **Hinweis**: Sie möchten heute einen Termin.\n"
+            response += f"ℹ️ **Hinweis**: Sie möchten today einen appointment.\n"
             if kontext["praxis_offen"]:
-                response += f"✅ Die Praxis ist derzeit geöffnet.\n"
+                response += f"✅ Die practice ist derzeit open.\n"
             else:
-                response += f"❌ Die Praxis ist derzeit geschlossen.\n"
+                response += f"❌ Die practice ist derzeit closed.\n"
                 arbeitszeiten = kontext["arbeitszeiten_heute"]
-                response += f"⏰ Öffnungszeiten heute: {arbeitszeiten['vormittag']}"
-                if arbeitszeiten['nachmittag']:
-                    response += f", {arbeitszeiten['nachmittag']}"
+                response += f"⏰ opening hours today: {arbeitszeiten['morning']}"
+                if arbeitszeiten['afternoon']:
+                    response += f", {arbeitszeiten['afternoon']}"
                 response += "\n"
             response += "\n"
         
@@ -1197,15 +1197,15 @@ async def parse_terminwunsch(
             # Prüfe Verfügbarkeit
             ist_frei = appointment_manager.ist_verfuegbar(datum, uhrzeit)
             if ist_frei:
-                response += f"✅ **Der gewünschte Termin ist verfügbar!**\n"
+                response += f"✅ **Der gewünschte appointment ist verfügbar!**\n"
                 response += f"📅 {datum} um {uhrzeit} für {behandlungsart}\n\n"
-                response += f"💡 Möchten Sie diesen Termin buchen?"
+                response += f"💡 Möchten Sie diesen appointment buchen?"
             else:
-                response += f"❌ **Der gewünschte Termin ist bereits belegt.**\n"
+                response += f"❌ **Der gewünschte appointment ist bereits belegt.**\n"
                 response += f"📅 {datum} um {uhrzeit}\n\n"
                 
                 # Zeige intelligente Alternativen
-                alternative_termine = appointment_manager.get_intelligente_terminvorschlaege(behandlungsart, datum, 3)
+                alternative_termine = appointment_manager.get_smart_appointment_suggestions(behandlungsart, datum, 3)
                 response += f"🔄 **Alternative Vorschläge:**\n{alternative_termine}"
         else:
             # Zeige verfügbare Zeiten für den Tag
@@ -1213,23 +1213,23 @@ async def parse_terminwunsch(
             if verfuegbare_zeiten:
                 response += f"✅ **Verfügbare Zeiten am {datum}:**\n"
                 for i, zeit in enumerate(verfuegbare_zeiten[:5], 1):
-                    response += f"  {i}. {zeit} Uhr\n"
+                    response += f"  {i}. {zeit} o'clock\n"
                 response += f"\n💡 Welche Uhrzeit passt Ihnen am besten?"
             else:
-                response += f"❌ **Am {datum} sind keine Termine verfügbar.**\n"
+                response += f"❌ **Am {datum} sind keine appointments verfügbar.**\n"
                 
                 # Zeige intelligente Alternativen
-                alternative_termine = appointment_manager.get_intelligente_terminvorschlaege(behandlungsart, datum, 3)
-                response += f"\n🔄 **Alternative Termine:**\n{alternative_termine}"
+                alternative_termine = appointment_manager.get_smart_appointment_suggestions(behandlungsart, datum, 3)
+                response += f"\n🔄 **Alternative appointments:**\n{alternative_termine}"
         
         return response
         
     except Exception as e:
         logging.error(f"Fehler beim Parsen des Terminwunsches: {e}")
-        return "Entschuldigung, ich konnte Ihren Terminwunsch nicht verstehen."
+        return "Sorry, ich konnte Ihren Terminwunsch nicht verstehen."
 
 @function_tool()
-async def get_aktuelle_datetime_info(
+async def get_current_datetime_info(
     context: RunContext
 ) -> str:
     """
@@ -1242,7 +1242,7 @@ async def get_aktuelle_datetime_info(
         info = get_current_datetime_info()
 
         antwort = f"**Aktuelle Datum- und Zeitinformationen:**\n\n"
-        antwort += f"**Heute**: {info['date_formatted']}\n"
+        antwort += f"**today**: {info['date_formatted']}\n"
         antwort += f"**Uhrzeit**: {info['time_formatted']}\n"
         antwort += f"**Auto-Datum**: {info['auto_date']}\n"
         antwort += f"**Auto-Zeit**: {info['auto_time']}\n\n"
@@ -1250,31 +1250,31 @@ async def get_aktuelle_datetime_info(
         # Praxisstatus basierend auf Wochentag und Uhrzeit
         antwort += f"**Praxisstatus:**\n"
 
-        # Öffnungszeiten bestimmen
-        if info['weekday'] == 'Sonntag':
-            antwort += f"Heute ist Sonntag - Praxis ist geschlossen.\n"
-            antwort += f"Morgen ({info['tomorrow_weekday']}) sind wir wieder da.\n"
-        elif info['weekday'] == 'Samstag':
-            antwort += f"Heute (Samstag) haben wir von 9:00-12:30 geöffnet.\n"
+        # opening hours bestimmen
+        if info['weekday'] == 'Sunday':
+            antwort += f"today ist Sunday - practice ist closed.\n"
+            antwort += f"tomorrow ({info['tomorrow_weekday']}) sind wir wieder da.\n"
+        elif info['weekday'] == 'Saturday':
+            antwort += f"today (Saturday) haben wir von 9:00-12:30 open.\n"
             if 9 <= info['hour'] <= 12 and (info['hour'] < 12 or info['minute'] <= 30):
-                antwort += f"Praxis ist derzeit **GEÖFFNET**.\n"
+                antwort += f"practice ist derzeit **open**.\n"
             else:
-                antwort += f"Praxis ist derzeit **GESCHLOSSEN**.\n"
-        elif info['weekday'] == 'Freitag':
-            antwort += f"Heute (Freitag) haben wir von 9:00-11:30 und 14:00-16:00 geöffnet.\n"
+                antwort += f"practice ist derzeit **closed**.\n"
+        elif info['weekday'] == 'Friday':
+            antwort += f"today (Friday) haben wir von 9:00-11:30 und 14:00-16:00 open.\n"
             if (9 <= info['hour'] <= 11 and (info['hour'] < 11 or info['minute'] <= 30)) or (14 <= info['hour'] < 16):
-                antwort += f"Praxis ist derzeit **GEÖFFNET**.\n"
+                antwort += f"practice ist derzeit **open**.\n"
             else:
-                antwort += f"Praxis ist derzeit **GESCHLOSSEN**.\n"
-        else:  # Montag-Donnerstag
-            antwort += f"Heute ({info['weekday']}) haben wir von 9:00-11:30 und 14:00-17:30 geöffnet.\n"
+                antwort += f"practice ist derzeit **closed**.\n"
+        else:  # Monday-Thursday
+            antwort += f"today ({info['weekday']}) haben wir von 9:00-11:30 und 14:00-17:30 open.\n"
             if (9 <= info['hour'] <= 11 and (info['hour'] < 11 or info['minute'] <= 30)) or (14 <= info['hour'] <= 17 and (info['hour'] < 17 or info['minute'] <= 30)):
-                antwort += f"Praxis ist derzeit **GEÖFFNET**.\n"
+                antwort += f"practice ist derzeit **open**.\n"
             else:
-                antwort += f"Praxis ist derzeit **GESCHLOSSEN**.\n"
+                antwort += f"practice ist derzeit **closed**.\n"
         
         antwort += f"\n📊 **Weitere Infos:**\n"
-        antwort += f"📅 Morgen: {info['morgen']}\n"
+        antwort += f"📅 tomorrow: {info['tomorrow']}\n"
         antwort += f"📅 Übermorgen: {info['übermorgen']}\n"
         antwort += f"📅 Nächste Woche: {info['nächste_woche']}\n"
         antwort += f"📊 Kalenderwoche: {info['kalenderwoche']}\n"
@@ -1283,12 +1283,12 @@ async def get_aktuelle_datetime_info(
         
     except Exception as e:
         logging.error(f"Fehler bei Datetime-Info: {e}")
-        return "Entschuldigung, es gab ein Problem beim Abrufen der Zeitinformationen."
+        return "Sorry, es gab ein Problem beim Abrufen der Zeitinformationen."
 
 @function_tool()
-async def get_intelligente_terminvorschlaege(
+async def get_smart_appointment_suggestions(
     context: RunContext,
-    behandlungsart: str = "Kontrolluntersuchung",
+    behandlungsart: str = "check-up",
     ab_datum: str = "",
     anzahl: int = 5
 ) -> str:
@@ -1299,34 +1299,34 @@ async def get_intelligente_terminvorschlaege(
     anzahl: Anzahl der Vorschläge
     """
     try:
-        return appointment_manager.get_intelligente_terminvorschlaege(behandlungsart, ab_datum, anzahl)
+        return appointment_manager.get_smart_appointment_suggestions(behandlungsart, ab_datum, anzahl)
         
     except Exception as e:
         logging.error(f"Fehler bei intelligenten Terminvorschlägen: {e}")
-        return "Entschuldigung, es gab ein Problem bei den Terminvorschlägen."
+        return "Sorry, es gab ein Problem bei den Terminvorschlägen."
 
 @function_tool()
-async def termin_buchen_mit_details(
+async def book_appointment_with_details(
     context: RunContext,
     patient_name: str,
     phone: str,
     appointment_date: str,
     appointment_time: str,
-    treatment_type: str = "Kontrolluntersuchung",
+    treatment_type: str = "check-up",
     notes: str = ""
 ) -> str:
     """
-    Bucht einen Termin mit allen erforderlichen Patientendetails.
+    Bucht einen appointment mit allen erforderlichen Patientendetails.
     Stellt sicher, dass Name, Telefon und Beschreibung immer gespeichert werden.
     """
     try:
         # Validiere deutsche Telefonnummer
         if not ist_deutsche_telefonnummer(phone):
             return f"❌ **Terminbuchung nicht möglich**\n\n" \
-                   f"Entschuldigung, wir können nur Termine für Patienten mit deutschen Telefonnummern vereinbaren.\n\n" \
+                   f"Sorry, wir können nur appointments für patients mit deutschen Telefonnummern vereinbaren.\n\n" \
                    f"**Ihre eingegebene Nummer**: {phone}\n\n" \
-                   f"Bitte geben Sie eine deutsche Festnetz- oder Mobilnummer an (z.B. 030 12345678 oder 0170 12345678).\n\n" \
-                   f"**Alternative**: Sie können auch gerne persönlich in unserer Praxis vorbeikommen:\n" \
+                   f"Please geben Sie eine deutsche Festnetz- oder Mobilnummer an (z.B. 030 12345678 oder 0170 12345678).\n\n" \
+                   f"**Alternative**: Sie können auch Gladly persönlich in unserer practice vorbeikommen:\n" \
                    f"📍 Hauptstraße 123, 10115 Berlin\n" \
                    f"📞 030 12345678"
         
@@ -1341,7 +1341,7 @@ async def termin_buchen_mit_details(
             'notes': notes
         })
         
-        # Termin buchen
+        # appointment buchen
         result = appointment_manager.termin_hinzufuegen(
             patient_name=patient_name,
             telefon=phone_formatted,
@@ -1361,7 +1361,7 @@ async def termin_buchen_mit_details(
                 'notes': notes
             }
             call_manager.mark_appointment_scheduled(appointment_data)
-            call_manager.add_note(f"Termin gebucht: {appointment_date} {appointment_time}")
+            call_manager.add_note(f"appointment gebucht: {appointment_date} {appointment_time}")
             
             # Lernfähigkeit: Anfrage aufzeichnen
             lernsystem.anfrage_aufzeichnen(f"Termin_{treatment_type}", {
@@ -1370,55 +1370,55 @@ async def termin_buchen_mit_details(
                 "behandlung": treatment_type
             })
             
-            return f"**Termin erfolgreich gebucht!**\n\n" \
-                   f"**Patient**: {patient_name}\n" \
+            return f"**appointment erfolgreich gebucht!**\n\n" \
+                   f"**patient**: {patient_name}\n" \
                    f"**Telefon**: {phone}\n" \
                    f"**Datum**: {appointment_date}\n" \
                    f"**Uhrzeit**: {appointment_time}\n" \
                    f"**Behandlung**: {treatment_type}\n" \
                    f"**Notizen**: {notes if notes else 'Keine'}\n\n" \
-                   f"Alle Ihre Daten wurden gespeichert. Vielen Dank für Ihr Vertrauen!\n\n" \
+                   f"Alle Ihre Daten wurden gespeichert. Thank you very much für Ihr Vertrauen!\n\n" \
                    f"Kann ich Ihnen noch mit etwas anderem helfen?"
         else:
-            return f"❌ **Terminbuchung fehlgeschlagen**: Termin nicht verfügbar oder bereits belegt"
+            return f"❌ **Terminbuchung fehlgeschlagen**: appointment nicht verfügbar oder bereits belegt"
             
     except Exception as e:
         logging.error(f"Fehler bei Terminbuchung mit Details: {e}")
-        return f"❌ Entschuldigung, es gab ein Problem bei der Terminbuchung: {str(e)}"
+        return f"❌ Sorry, es gab ein Problem bei der Terminbuchung: {str(e)}"
 
 @function_tool()
-async def check_verfuegbarkeit_spezifisch(
+async def check_specific_availability(
     context: RunContext,
     datum: str,
     uhrzeit: str,
-    behandlungsart: str = "Kontrolluntersuchung"
+    behandlungsart: str = "check-up"
 ) -> str:
     """
-    Prüft spezifische Verfügbarkeit für einen exakten Termin.
+    Prüft spezifische Verfügbarkeit für einen exakten appointment.
     """
     try:
         # Verfügbarkeit prüfen
         available = appointment_manager.ist_verfuegbar(datum, uhrzeit)
         
         if available:
-            return f"**Termin verfügbar!**\n\n" \
+            return f"**appointment verfügbar!**\n\n" \
                    f"**Datum**: {datum}\n" \
                    f"**Uhrzeit**: {uhrzeit}\n" \
                    f"**Behandlung**: {behandlungsart}\n\n" \
-                   f"Möchten Sie diesen Termin buchen? Ich benötige dann Ihren Namen, den Grund für den Besuch und Ihre Telefonnummer."
+                   f"Möchten Sie diesen appointment buchen? Ich benötige dann Ihren Namen, den Grund für den Besuch und Ihre Telefonnummer."
         else:
-            # Alternative Termine vorschlagen
-            alternatives = appointment_manager.get_intelligente_terminvorschlaege(behandlungsart, datum, 3)
-            return f"❌ **Termin nicht verfügbar**\n\n" \
-                   f"Der gewünschte Termin am {datum} um {uhrzeit} ist leider nicht verfügbar.\n\n" \
-                   f"🔄 **Alternative Termine:**\n{alternatives}"
+            # Alternative appointments vorschlagen
+            alternatives = appointment_manager.get_smart_appointment_suggestions(behandlungsart, datum, 3)
+            return f"❌ **appointment nicht verfügbar**\n\n" \
+                   f"Der gewünschte appointment am {datum} um {uhrzeit} ist leider nicht verfügbar.\n\n" \
+                   f"🔄 **Alternative appointments:**\n{alternatives}"
                    
     except Exception as e:
         logging.error(f"Fehler bei spezifischer Verfügbarkeitsprüfung: {e}")
-        return f"❌ Entschuldigung, es gab ein Problem bei der Verfügbarkeitsprüfung: {str(e)}"
+        return f"❌ Sorry, es gab ein Problem bei der Verfügbarkeitsprüfung: {str(e)}"
 
 @function_tool()
-async def gespraech_beenden(
+async def end_conversation(
     context: RunContext,
     grund: str = "Verabschiedung"
 ) -> str:
@@ -1433,14 +1433,14 @@ async def gespraech_beenden(
         call_manager.add_note(f"Gespräch beendet: {grund}")
         
         # Höfliche Verabschiedung
-        response = "Vielen Dank für Ihren Anruf! "
+        response = "Thank you very much für Ihren Anruf! "
         
-        # Falls ein Termin gebucht wurde, kurze Bestätigung
+        # Falls ein appointment gebucht wurde, kurze Bestätigung
         if call_manager.scheduled_appointment:
             apt = call_manager.scheduled_appointment
             response += f"Wir freuen uns auf Sie am {apt['date']} um {apt['time']}. "
             
-        response += "Einen schönen Tag noch und auf Wiederhören!"
+        response += "Einen schönen Tag noch und Goodbye!"
         
         # Log für Debugging
         logging.info(f"🔴 GESPRÄCH BEENDET: {grund}")
@@ -1453,10 +1453,10 @@ async def gespraech_beenden(
     except Exception as e:
         logging.error(f"Fehler bei der Verabschiedung: {e}")
         # KEIN automatisches Beenden bei Fehlern
-        return f"Auf Wiedersehen! Falls Sie noch Fragen haben, bin ich weiterhin für Sie da."
+        return f"Goodbye! Falls Sie noch Fragen haben, bin ich weiterhin für Sie da."
 
 @function_tool()
-async def notiz_hinzufuegen(
+async def add_note(
     context: RunContext,
     notiz: str
 ) -> str:
@@ -1472,7 +1472,7 @@ async def notiz_hinzufuegen(
         return f"❌ Fehler beim Speichern der Notiz."
 
 @function_tool()
-async def gespraech_status(
+async def conversation_status(
     context: RunContext
 ) -> str:
     """
@@ -1488,11 +1488,11 @@ async def gespraech_status(
         response = f"📊 **Gesprächsstatus:** {status_text[call_manager.status]}\n\n"
         
         if call_manager.patient_info:
-            response += f"👤 **Patient:** {call_manager.patient_info.get('name', 'N/A')}\n"
+            response += f"👤 **patient:** {call_manager.patient_info.get('name', 'N/A')}\n"
             response += f"📞 **Telefon:** {call_manager.patient_info.get('phone', 'N/A')}\n"
             
         if call_manager.scheduled_appointment:
-            response += f"📅 **Termin gebucht:** Ja\n"
+            response += f"📅 **appointment gebucht:** Ja\n"
             
         if call_manager.notes:
             response += f"📝 **Notizen:** {len(call_manager.notes)}\n"
@@ -1504,7 +1504,7 @@ async def gespraech_status(
         return f"❌ Fehler beim Abrufen des Status."
 
 @function_tool()
-async def get_zeitbewusste_begruessung(
+async def get_time_aware_greeting(
     context: RunContext
 ) -> str:
     """
@@ -1516,27 +1516,27 @@ async def get_zeitbewusste_begruessung(
 
         # Bestimme die passende Begrüßung basierend auf der Uhrzeit
         if 6 <= info['hour'] < 12:
-            begruessung = "Guten Morgen"
+            begruessung = "Guten tomorrow"
         elif 12 <= info['hour'] < 18:
-            begruessung = "Guten Tag"
+            begruessung = "Good day"
         else:
-            begruessung = "Guten Abend"
+            begruessung = "Guten evening"
 
         # Einfache Begrüßung OHNE automatischen Praxisstatus
-        response = f"{begruessung}! Ich bin Sofia, Ihre Assistentin bei der Zahnarztpraxis Dr. Weber. "
-        response += f"Wie kann ich Ihnen heute helfen?"
+        response = f"{begruessung}! Ich bin Sofia, Ihre Assistentin bei der Dental Practice Dr. Weber. "
+        response += f"Wie kann ich Ihnen today helfen?"
         
         # Notiz hinzufügen
-        call_manager.add_note(f"Begrüßung: {begruessung} um {info['time_formatted']} Uhr")
+        call_manager.add_note(f"Begrüßung: {begruessung} um {info['time_formatted']} o'clock")
         
         return response
         
     except Exception as e:
         logging.error(f"Fehler bei zeitbewusster Begrüßung: {e}")
-        return "Guten Tag! Ich bin Sofia, Ihre Assistentin bei der Zahnarztpraxis Dr. Weber. Wie kann ich Ihnen helfen?"
+        return "Good day! Ich bin Sofia, Ihre Assistentin bei der Dental Practice Dr. Weber. Wie kann ich Ihnen helfen?"
 
 @function_tool()
-async def get_zeitabhaengige_begruessung(
+async def get_time_based_greeting(
     context: RunContext
 ) -> str:
     """
@@ -1549,38 +1549,38 @@ async def get_zeitabhaengige_begruessung(
 
         # Zeitabhängige Begrüßung bestimmen
         if 4 <= info['hour'] <= 10:
-            begruessung = "Guten Morgen"
+            begruessung = "Guten tomorrow"
         elif 11 <= info['hour'] <= 17:
-            begruessung = "Guten Tag"
+            begruessung = "Good day"
         else:  # 18:00-03:59
-            begruessung = "Guten Abend"
+            begruessung = "Guten evening"
 
         # Einfache Begrüßung OHNE automatischen Praxisstatus
-        antwort = f"{begruessung}! Ich bin Sofia, Ihre Assistentin bei der Zahnarztpraxis Dr. Weber. "
-        antwort += f"Wie kann ich Ihnen heute helfen?"
+        antwort = f"{begruessung}! Ich bin Sofia, Ihre Assistentin bei der Dental Practice Dr. Weber. "
+        antwort += f"Wie kann ich Ihnen today helfen?"
 
         # Notiz hinzufügen - ✅ KONSISTENT: Verwende bereits vorhandene info
-        call_manager.add_note(f"Begrüßung: {begruessung} um {info['time_formatted']} Uhr am {info['date_formatted']}")
+        call_manager.add_note(f"Begrüßung: {begruessung} um {info['time_formatted']} o'clock am {info['date_formatted']}")
 
         return antwort
         
     except Exception as e:
         logging.error(f"Fehler bei zeitabhängiger Begrüßung: {e}")
-        return "Guten Tag! Ich bin Sofia, Ihre Praxisassistentin. Wie kann ich Ihnen helfen?"
+        return "Good day! Ich bin Sofia, Ihre Praxisassistentin. Wie kann ich Ihnen helfen?"
 
 @function_tool()
-async def terminbuchung_schritt_fuer_schritt(
+async def appointment_booking_step_by_step(
     context: RunContext,
     appointment_date: str,
     appointment_time: str,
-    treatment_type: str = "Kontrolluntersuchung"
+    treatment_type: str = "check-up"
 ) -> str:
     """
     Führt Sofia durch die PFLICHT-Reihenfolge für Terminbuchung:
     1. Name fragen
     2. Grund fragen
     3. Telefon fragen
-    4. Termin buchen
+    4. appointment buchen
 
     Diese Funktion gibt Sofia die EXAKTEN Fragen vor, die sie stellen muss.
     """
@@ -1589,13 +1589,13 @@ async def terminbuchung_schritt_fuer_schritt(
         available = appointment_manager.ist_verfuegbar(appointment_date, appointment_time)
 
         if not available:
-            alternatives = appointment_manager.get_intelligente_terminvorschlaege(treatment_type, appointment_date, 3)
-            return f"❌ Der gewünschte Termin am {appointment_date} um {appointment_time} ist leider nicht verfügbar.\n\n" \
+            alternatives = appointment_manager.get_smart_appointment_suggestions(treatment_type, appointment_date, 3)
+            return f"❌ Der gewünschte appointment am {appointment_date} um {appointment_time} ist leider nicht verfügbar.\n\n" \
                    f"🔄 Ich habe diese Alternativen für Sie:\n{alternatives}\n\n" \
-                   f"Welcher Termin passt Ihnen?"
+                   f"Welcher appointment passt Ihnen?"
 
-        # Termin ist verfügbar - jetzt PFLICHT-Reihenfolge
-        response = f"✅ **Termin verfügbar!** {appointment_date} um {appointment_time} für {treatment_type}.\n\n"
+        # appointment ist verfügbar - jetzt PFLICHT-Reihenfolge
+        response = f"✅ **appointment verfügbar!** {appointment_date} um {appointment_time} für {treatment_type}.\n\n"
         response += f"**Für die Buchung benötige ich:**\n"
         response += f"1. Ihren Namen\n"
         response += f"2. Den Grund für den Besuch\n"
@@ -1609,20 +1609,20 @@ async def terminbuchung_schritt_fuer_schritt(
 
     except Exception as e:
         logging.error(f"Fehler bei der schrittweisen Terminbuchung: {e}")
-        return f"❌ Entschuldigung, es gab ein Problem bei der Terminbuchung. Bitte versuchen Sie es erneut."
+        return f"❌ Sorry, es gab ein Problem bei der Terminbuchung. Please versuchen Sie es erneut."
 
 @function_tool()
-async def termin_direkt_buchen(
+async def book_appointment_directly(
     context: RunContext,
     patient_name: str,
     phone: str,
     appointment_date: str,
     appointment_time: str,
-    treatment_type: str = "Kontrolluntersuchung",
+    treatment_type: str = "check-up",
     notes: str = ""
 ) -> str:
     """
-    Bucht einen Termin DIREKT ohne doppelte Bestätigung.
+    Bucht einen appointment DIREKT ohne doppelte Bestätigung.
     ✅ KONSISTENT: Verwendet validate_and_parse_datetime() für Validierung
     """
     try:
@@ -1644,13 +1644,13 @@ async def termin_direkt_buchen(
         available = appointment_manager.ist_verfuegbar(appointment_date, appointment_time)
         
         if not available:
-            # Alternative Termine vorschlagen statt Fehler
-            alternatives = appointment_manager.get_intelligente_terminvorschlaege(treatment_type, appointment_date, 3)
-            return f"❌ **Der gewünschte Termin am {appointment_date} um {appointment_time} ist leider nicht verfügbar.**\n\n" \
+            # Alternative appointments vorschlagen statt Fehler
+            alternatives = appointment_manager.get_smart_appointment_suggestions(treatment_type, appointment_date, 3)
+            return f"❌ **Der gewünschte appointment am {appointment_date} um {appointment_time} ist leider nicht verfügbar.**\n\n" \
                    f"🔄 **Ich habe diese Alternativen für Sie:**\n{alternatives}\n\n" \
-                   f"Welcher Termin passt Ihnen?"
+                   f"Welcher appointment passt Ihnen?"
         
-        # Termin direkt buchen (ohne nochmalige Bestätigung)
+        # appointment direkt buchen (ohne nochmalige Bestätigung)
         result = appointment_manager.termin_hinzufuegen(
             patient_name=patient_name,
             telefon=phone,
@@ -1672,15 +1672,15 @@ async def termin_direkt_buchen(
                 'notes': notes
             }
             call_manager.mark_appointment_scheduled(appointment_data)
-            call_manager.add_note(f"Termin direkt gebucht: {appointment_date} {appointment_time}")
+            call_manager.add_note(f"appointment direkt gebucht: {appointment_date} {appointment_time}")
 
-            return f"**✅ Perfekt! Ihr Termin ist gebucht!**\n\n" \
+            return f"**✅ Perfekt! Ihr appointment ist gebucht!**\n\n" \
                    f"👤 **Name**: {patient_name}\n" \
                    f"📞 **Telefon**: {phone}\n" \
-                   f"📅 **Termin**: {appointment_date} um {appointment_time}\n" \
+                   f"📅 **appointment**: {appointment_date} um {appointment_time}\n" \
                    f"🦷 **Behandlung**: {treatment_type}\n" \
                    f"📝 **Notizen**: {notes if notes else 'Keine besonderen Notizen'}\n\n" \
-                   f"🎉 **Ihr Termin ist bestätigt!** Wir freuen uns auf Sie!\n" \
+                   f"🎉 **Ihr appointment ist bestätigt!** Wir freuen uns auf Sie!\n" \
                    f"📞 Bei Fragen erreichen Sie uns unter: 0123 456 789\n\n" \
                    f"💡 **Kann ich Ihnen noch bei etwas anderem helfen?**"
         else:
@@ -1688,25 +1688,25 @@ async def termin_direkt_buchen(
             error_msg = result if result else "Unbekannter Fehler beim Speichern"
 
             # Biete Alternativen an
-            alternatives = appointment_manager.get_intelligente_terminvorschlaege(treatment_type, appointment_date, 3)
+            alternatives = appointment_manager.get_smart_appointment_suggestions(treatment_type, appointment_date, 3)
 
             return f"{error_msg}\n\n" \
-                   f"🔄 **Keine Sorge! Hier sind alternative Termine:**\n{alternatives}\n\n" \
-                   f"💡 **Welcher Termin würde Ihnen passen?**"
+                   f"🔄 **Keine Sorge! Hier sind alternative appointments:**\n{alternatives}\n\n" \
+                   f"💡 **Welcher appointment würde Ihnen passen?**"
             
     except Exception as e:
         logging.error(f"Fehler bei direkter Terminbuchung: {e}")
-        return f"❌ Entschuldigung, es gab ein Problem bei der Terminbuchung: {str(e)}"
+        return f"❌ Sorry, es gab ein Problem bei der Terminbuchung: {str(e)}"
 
 @function_tool()
-async def medizinische_nachfragen_stellen(
+async def ask_medical_followup_questions(
     context: RunContext,
     symptom_oder_grund: str
 ) -> str:
     """
     🩺 Stellt intelligente medizinische Nachfragen basierend auf Symptomen oder Behandlungsgründen.
     Sofia wird hilfreicher und fragt nach wichtigen Details wie:
-    - Bei Schmerzen: seit wann, Medikamente, Art des Schmerzes
+    - Bei pain: seit wann, Medikamente, Art des Schmerzes
     - Bei Implantaten: Probleme oder nur Kontrolle
     - Bei allen Fällen: relevante medizinische Details
 
@@ -1723,10 +1723,10 @@ async def medizinische_nachfragen_stellen(
 
     except Exception as e:
         logging.error(f"Fehler bei medizinischen Nachfragen: {e}")
-        return "Entschuldigung, ich konnte keine spezifischen Nachfragen generieren. Können Sie mir mehr über Ihre Beschwerden erzählen?"
+        return "Sorry, ich konnte keine spezifischen Nachfragen generieren. Können Sie mir mehr über Ihre Beschwerden erzählen?"
 
 @function_tool()
-async def intelligente_terminbuchung_mit_nachfragen(
+async def smart_appointment_booking_with_followups(
     context: RunContext,
     appointment_date: str,
     appointment_time: str,
@@ -1749,12 +1749,12 @@ async def intelligente_terminbuchung_mit_nachfragen(
         available = appointment_manager.ist_verfuegbar(appointment_date, appointment_time)
 
         if not available:
-            alternatives = appointment_manager.get_intelligente_terminvorschlaege(symptom_oder_grund, appointment_date, 3)
-            return f"Der gewünschte Termin am {appointment_date} um {appointment_time} ist leider nicht verfügbar. " \
-                   f"Ich habe diese Alternativen für Sie: {alternatives} Welcher Termin passt Ihnen?"
+            alternatives = appointment_manager.get_smart_appointment_suggestions(symptom_oder_grund, appointment_date, 3)
+            return f"Der gewünschte appointment am {appointment_date} um {appointment_time} ist leider nicht verfügbar. " \
+                   f"Ich habe diese Alternativen für Sie: {alternatives} Welcher appointment passt Ihnen?"
 
-        # Termin ist verfügbar
-        response = f"Sehr gut, der Termin am {appointment_date} um {appointment_time} ist verfügbar. "
+        # appointment ist verfügbar
+        response = f"Sehr gut, der appointment am {appointment_date} um {appointment_time} ist verfügbar. "
 
         # Medizinische Nachfragen stellen (nur wenn noch nicht gestellt)
         if symptom_oder_grund and not any(word in symptom_oder_grund.lower() for word in ['kontrolle', 'untersuchung', 'check']):
@@ -1776,7 +1776,7 @@ async def intelligente_terminbuchung_mit_nachfragen(
             return response
         else:
             # Alle Daten vorhanden - direkt buchen
-            return await termin_direkt_buchen(
+            return await book_appointment_directly(
                 context=context,
                 patient_name=patient_name,
                 phone=phone,
@@ -1788,10 +1788,10 @@ async def intelligente_terminbuchung_mit_nachfragen(
 
     except Exception as e:
         logging.error(f"Fehler bei intelligenter Terminbuchung: {e}")
-        return f"Entschuldigung, es gab ein Problem bei der Terminbuchung. Bitte versuchen Sie es erneut."
+        return f"Sorry, es gab ein Problem bei der Terminbuchung. Please versuchen Sie es erneut."
 
 @function_tool()
-async def namen_erkennen_und_speichern(
+async def recognize_and_save_name(
     context: RunContext,
     patient_input: str
 ) -> str:
@@ -1799,7 +1799,7 @@ async def namen_erkennen_und_speichern(
     🧠 NAMEN-ERKENNUNG: Erkennt und speichert Patientennamen aus der Eingabe
     Verhindert doppelte Namens-Abfrage durch intelligente Erkennung
 
-    patient_input: Die Eingabe des Patienten (z.B. "Ich bin Max Mustermann")
+    patient_input: Die Eingabe des patients (z.B. "Ich bin Max Mustermann")
     """
     try:
         # Einfache Namen-Erkennung
@@ -1826,33 +1826,33 @@ async def namen_erkennen_und_speichern(
         if detected_name and len(detected_name) > 2:
             # Namen speichern
             call_manager.set_patient_name(detected_name)
-            return f"Hallo {detected_name}! Schön, dass Sie sich gemeldet haben. Wie kann ich Ihnen helfen?"
+            return f"Hello {detected_name}! Schön, dass Sie sich gemeldet haben. Wie kann ich Ihnen helfen?"
 
         # Kein Name erkannt - höflich nachfragen
         if call_manager.should_ask_for_name():
             call_manager.mark_name_asked()
-            return "Hallo! Ich bin Sofia von der Zahnarztpraxis Dr. Weber. Darf ich fragen, wie Sie heißen?"
+            return "Hello! Ich bin Sofia von der Dental Practice Dr. Weber. Darf ich fragen, wie Sie heißen?"
 
         # Name bereits bekannt oder schon gefragt
         if call_manager.has_patient_name():
-            return f"Hallo {call_manager.get_patient_name()}! Wie kann ich Ihnen helfen?"
+            return f"Hello {call_manager.get_patient_name()}! Wie kann ich Ihnen helfen?"
         else:
-            return "Hallo! Wie kann ich Ihnen helfen?"
+            return "Hello! Wie kann ich Ihnen helfen?"
 
     except Exception as e:
         logging.error(f"Fehler bei Namen-Erkennung: {e}")
-        return "Hallo! Wie kann ich Ihnen helfen?"
+        return "Hello! Wie kann ich Ihnen helfen?"
 
 @function_tool()
-async def intelligente_antwort_mit_namen_erkennung(
+async def smart_response_with_name_recognition(
     context: RunContext,
     patient_input: str
 ) -> str:
     """
     🧠 INTELLIGENTE ANTWORT: Erkennt automatisch Namen und antwortet entsprechend
-    Beispiel: "Hallo Sofia, mein Name ist Müller" → Erkennt "Müller" automatisch
+    Beispiel: "Hello Sofia, mein Name ist Müller" → Erkennt "Müller" automatisch
 
-    patient_input: Die komplette Eingabe des Patienten
+    patient_input: Die komplette Eingabe des patients
     """
     try:
         import re
@@ -1872,35 +1872,35 @@ async def intelligente_antwort_mit_namen_erkennung(
             if match:
                 potential_name = match.group(1).strip()
                 # Filtere häufige Nicht-Namen aus
-                if potential_name.lower() not in ['sofia', 'hallo', 'guten', 'tag', 'abend', 'morgen', 'ich', 'bin', 'der', 'die', 'das', 'haben', 'schmerzen', 'termin']:
+                if potential_name.lower() not in ['sofia', 'Hello', 'guten', 'tag', 'evening', 'tomorrow', 'ich', 'bin', 'der', 'die', 'das', 'haben', 'pain', 'appointment']:
                     detected_name = potential_name
                     break
 
         # 2. NAMEN SPEICHERN falls erkannt und noch nicht gespeichert
         if detected_name and len(detected_name) > 2 and not call_manager.has_patient_name():
             call_manager.set_patient_name(detected_name)
-            response = f"Hallo {detected_name}! "
+            response = f"Hello {detected_name}! "
         elif call_manager.has_patient_name():
-            response = f"Hallo {call_manager.get_patient_name()}! "
+            response = f"Hello {call_manager.get_patient_name()}! "
         else:
-            response = "Hallo! "
+            response = "Hello! "
 
         # 3. INHALTLICHE ANTWORT basierend auf Eingabe
         input_lower = patient_input.lower()
 
         # Terminwunsch erkennen
-        if any(word in input_lower for word in ['termin', 'appointment', 'buchung', 'vereinbaren']):
+        if any(word in input_lower for word in ['appointment', 'appointment', 'buchung', 'vereinbaren']):
             # Prüfe ob Grund bereits genannt wurde
-            grund_keywords = ['schmerz', 'kontrolle', 'reinigung', 'füllung', 'krone', 'implantat', 
+            grund_keywords = ['schmerz', 'kontrolle', 'reinigung', 'filling', 'krone', 'implantat', 
                             'zahnfleisch', 'wurzel', 'weisheit', 'ziehen', 'bluten', 'geschwollen',
-                            'gebrochen', 'notfall', 'vorsorge', 'prophylaxe', 'beratung']
+                            'gebrochen', 'emergency', 'vorsorge', 'prophylaxe', 'beratung']
             
             hat_grund = any(keyword in input_lower for keyword in grund_keywords)
             
             if hat_grund:
-                response += "Gerne vereinbare ich einen Termin für Sie. Wie ist Ihr Name?"
+                response += "Gladly vereinbare ich einen appointment für Sie. Wie ist Ihr Name?"
             else:
-                response += "Gerne vereinbare ich einen Termin für Sie. Wofür benötigen Sie denn den Termin?"
+                response += "Gladly vereinbare ich einen appointment für Sie. Wofür benötigen Sie denn den appointment?"
                 
                 # Lernfähigkeit: Häufige Terminanfragen tracken
                 lernsystem.anfrage_aufzeichnen("Terminanfrage_ohne_Grund", {
@@ -1908,13 +1908,13 @@ async def intelligente_antwort_mit_namen_erkennung(
                     "zeitstempel": datetime.now().isoformat()
                 })
 
-        # Schmerzen erkennen
-        elif any(word in input_lower for word in ['schmerz', 'schmerzen', 'weh', 'tut weh', 'ziehen', 'stechen', 'pochen']):
-            response += "Oh, das tut mir leid zu hören, dass Sie Schmerzen haben. Seit wann haben Sie denn die Beschwerden?"
+        # pain erkennen
+        elif any(word in input_lower for word in ['schmerz', 'pain', 'weh', 'tut weh', 'ziehen', 'stechen', 'pochen']):
+            response += "Oh, das tut mir leid zu hören, dass Sie pain haben. Seit wann haben Sie denn die Beschwerden?"
 
         # Implantat erkennen
         elif any(word in input_lower for word in ['implantat', 'implant']):
-            response += "Ah, es geht um Ihr Implantat. Ist das nur für eine Kontrolluntersuchung oder haben Sie Probleme damit?"
+            response += "Ah, es geht um Ihr Implantat. Ist das nur für eine check-up oder haben Sie Probleme damit?"
 
         # Zahnfleisch erkennen
         elif any(word in input_lower for word in ['zahnfleisch', 'blutet', 'geschwollen']):
@@ -1924,15 +1924,15 @@ async def intelligente_antwort_mit_namen_erkennung(
         elif any(word in input_lower for word in ['kontrolle', 'untersuchung', 'check', 'vorsorge']):
             response += "Das ist sehr gut, dass Sie zur Kontrolle kommen möchten. Wann hätten Sie Zeit?"
         
-        # Freie Termine anfragen
-        elif any(phrase in input_lower for phrase in ['termine frei', 'freie termine', 'verfügbar', 'noch platz', 'noch termine']):
+        # Freie appointments anfragen
+        elif any(phrase in input_lower for phrase in ['appointments frei', 'freie appointments', 'verfügbar', 'noch platz', 'noch appointments']):
             # Prüfe ob Name schon bekannt ist
             if call_manager.patient_name:
-                response += f"Gerne schaue ich nach freien Terminen für Sie, {call_manager.patient_name}. "
-                response += "Für welche Behandlung benötigen Sie einen Termin?"
+                response += f"Gladly schaue ich nach freien Terminen für Sie, {call_manager.patient_name}. "
+                response += "Für welche Behandlung benötigen Sie einen appointment?"
             else:
-                response += "Gerne schaue ich nach freien Terminen für Sie. "
-                response += "Um Ihnen passende Termine vorzuschlagen, benötige ich zunächst Ihren Namen und Ihre Telefonnummer."
+                response += "Gladly schaue ich nach freien Terminen für Sie. "
+                response += "Um Ihnen passende appointments vorzuschlagen, benötige ich zunächst Ihren Namen und Ihre Telefonnummer."
                 
                 # Lernfähigkeit: Terminanfrage ohne Identifikation tracken
                 lernsystem.anfrage_aufzeichnen("Terminanfrage_ohne_Identifikation", {
@@ -1942,24 +1942,24 @@ async def intelligente_antwort_mit_namen_erkennung(
 
         # Allgemeine Begrüßung
         else:
-            response += "Wie kann ich Ihnen heute helfen?"
+            response += "Wie kann ich Ihnen today helfen?"
 
         return response
 
     except Exception as e:
         logging.error(f"Fehler bei intelligenter Antwort: {e}")
-        return "Hallo! Wie kann ich Ihnen helfen?"
+        return "Hello! Wie kann ich Ihnen helfen?"
 
 @function_tool()
-async def gespraech_hoeflich_beenden(
+async def end_conversation_politely(
     context: RunContext,
     patient_input: str = ""
 ) -> str:
     """
-    📞 GESPRÄCHS-BEENDIGUNG: Beendet das Gespräch höflich wenn Patient keine Hilfe mehr braucht
-    Erkennt Aussagen wie "ich brauche keine Hilfe mehr", "das war alles", "danke, tschüss"
+    📞 GESPRÄCHS-BEENDIGUNG: Beendet das Gespräch höflich wenn patient keine Hilfe mehr braucht
+    Erkennt Aussagen wie "ich brauche keine Hilfe mehr", "das war alles", "Thank you, Bye"
 
-    patient_input: Die Eingabe des Patienten (optional, für Kontext)
+    patient_input: Die Eingabe des patients (optional, für Kontext)
     """
     try:
         # Markiere Gespräch als beendet
@@ -1972,14 +1972,14 @@ async def gespraech_hoeflich_beenden(
         if call_manager.has_patient_name():
             patient_name = call_manager.get_patient_name()
             if 4 <= info['hour'] <= 17:
-                verabschiedung = f"Vielen Dank für Ihren Anruf, {patient_name}. Haben Sie einen schönen Tag! Auf Wiederhören."
+                verabschiedung = f"Thank you very much für Ihren Anruf, {patient_name}. Haben Sie einen schönen Tag! Goodbye."
             else:
-                verabschiedung = f"Vielen Dank für Ihren Anruf, {patient_name}. Haben Sie einen schönen Abend! Auf Wiederhören."
+                verabschiedung = f"Thank you very much für Ihren Anruf, {patient_name}. Haben Sie einen schönen evening! Goodbye."
         else:
             if 4 <= info['hour'] <= 17:
-                verabschiedung = "Vielen Dank für Ihren Anruf. Haben Sie einen schönen Tag! Auf Wiederhören."
+                verabschiedung = "Thank you very much für Ihren Anruf. Haben Sie einen schönen Tag! Goodbye."
             else:
-                verabschiedung = "Vielen Dank für Ihren Anruf. Haben Sie einen schönen Abend! Auf Wiederhören."
+                verabschiedung = "Thank you very much für Ihren Anruf. Haben Sie einen schönen evening! Goodbye."
 
         # Notiz für das Gespräch
         call_manager.add_note(f"Gespräch beendet: {verabschiedung}")
@@ -1988,18 +1988,18 @@ async def gespraech_hoeflich_beenden(
 
     except Exception as e:
         logging.error(f"Fehler bei Gesprächs-Beendigung: {e}")
-        return "Vielen Dank für Ihren Anruf. Auf Wiederhören!"
+        return "Thank you very much für Ihren Anruf. Goodbye!"
 
 @function_tool()
-async def erkennung_gespraechsende_wunsch(
+async def detect_conversation_end_wish(
     context: RunContext,
     patient_input: str
 ) -> str:
     """
-    🔍 ERKENNUNG GESPRÄCHSENDE: Erkennt wenn Patient das Gespräch beenden möchte
-    Beispiele: "ich brauche keine Hilfe mehr", "das war alles", "danke tschüss"
+    🔍 ERKENNUNG GESPRÄCHSENDE: Erkennt wenn patient das Gespräch beenden möchte
+    Beispiele: "ich brauche keine Hilfe mehr", "das war alles", "Thank you Bye"
 
-    patient_input: Die Eingabe des Patienten
+    patient_input: Die Eingabe des patients
     """
     try:
         input_lower = patient_input.lower()
@@ -2012,10 +2012,10 @@ async def erkennung_gespraechsende_wunsch(
             "das wars",
             "mehr brauche ich nicht",
             "reicht mir",
-            "danke tschüss",
-            "danke tschuss",
-            "auf wiederhören",
-            "auf wiedersehen",
+            "Thank you Bye",
+            "Thank you tschuss",
+            "Goodbye",
+            "Goodbye",
             "bis dann",
             "muss auflegen",
             "muss schluss machen",
@@ -2023,55 +2023,55 @@ async def erkennung_gespraechsende_wunsch(
             "alles erledigt",
             "passt so",
             "ist gut so",
-            "danke das reicht"
+            "Thank you das reicht"
         ]
 
-        # Prüfe ob Patient das Gespräch beenden möchte
+        # Prüfe ob patient das Gespräch beenden möchte
         for muster in ende_muster:
             if muster in input_lower:
                 # Gespräch beenden
-                return await gespraech_hoeflich_beenden(context, patient_input)
+                return await end_conversation_politely(context, patient_input)
 
         # Kein Gesprächsende erkannt - normale Antwort
-        return await intelligente_antwort_mit_namen_erkennung(context, patient_input)
+        return await smart_response_with_name_recognition(context, patient_input)
 
     except Exception as e:
         logging.error(f"Fehler bei Gesprächsende-Erkennung: {e}")
         return "Wie kann ich Ihnen weiter helfen?"
 
 @function_tool()
-async def intelligente_grund_nachfragen(
+async def smart_reason_followup(
     context: RunContext,
     patient_input: str
 ) -> str:
     """
-    🤔 INTELLIGENTE GRUND-NACHFRAGEN: Fragt spezifisch nach dem Grund für den Termin
-    - Wenn kein Grund angegeben: "Wieso benötigen Sie einen Termin?"
+    🤔 INTELLIGENTE GRUND-NACHFRAGEN: Fragt spezifisch nach dem Grund für den appointment
+    - Wenn kein Grund angegeben: "Wieso benötigen Sie einen appointment?"
     - Bei "Kontrolle": "Gibt es einen besonderen Grund oder nur normale Untersuchung?"
     - Bei vagen Angaben: Spezifische Nachfragen
 
-    patient_input: Die Eingabe des Patienten
+    patient_input: Die Eingabe des patients
     """
     try:
         input_lower = patient_input.lower()
 
         # 1. KEIN GRUND ERKANNT - Allgemeine Nachfrage
         if any(phrase in input_lower for phrase in [
-            'brauche einen termin', 'möchte einen termin', 'termin vereinbaren',
-            'termin buchen', 'kann ich einen termin'
+            'brauche einen appointment', 'möchte einen appointment', 'appointment vereinbaren',
+            'appointment buchen', 'kann ich einen appointment'
         ]) and not any(grund in input_lower for grund in [
             'schmerz', 'weh', 'kontrolle', 'untersuchung', 'reinigung', 'implantat',
-            'krone', 'füllung', 'zahnfleisch', 'weisheitszahn', 'bleaching', 'notfall'
+            'krone', 'filling', 'zahnfleisch', 'weisheitszahn', 'bleaching', 'emergency'
         ]):
-            return "Gerne vereinbare ich einen Termin für Sie. Wieso benötigen Sie denn einen Termin?"
+            return "Gladly vereinbare ich einen appointment für Sie. Wieso benötigen Sie denn einen appointment?"
 
         # 2. KONTROLLE/UNTERSUCHUNG - Spezifische Nachfrage
         elif any(word in input_lower for word in ['kontrolle', 'untersuchung', 'check', 'vorsorge']):
             return "Sie möchten zur Kontrolle kommen. Gibt es einen besonderen Grund oder ist es einfach eine normale Untersuchung?"
 
         # 3. REINIGUNG - Nachfrage nach Zusätzlichem
-        elif any(word in input_lower for word in ['reinigung', 'zahnreinigung', 'prophylaxe']):
-            return "Eine professionelle Zahnreinigung, sehr gut. Soll das mit einer Kontrolle kombiniert werden?"
+        elif any(word in input_lower for word in ['reinigung', 'dental cleaning', 'prophylaxe']):
+            return "Eine professionelle dental cleaning, sehr gut. Soll das mit einer Kontrolle kombiniert werden?"
 
         # 4. VAGE BEGRIFFE - Spezifische Nachfragen
         elif any(word in input_lower for word in ['problem', 'beschwerden', 'etwas', 'schauen']):
@@ -2079,57 +2079,57 @@ async def intelligente_grund_nachfragen(
 
         # 5. BEREITS SPEZIFISCH - Verwende medizinische Nachfragen
         elif any(word in input_lower for word in [
-            'schmerz', 'schmerzen', 'weh', 'implantat', 'krone', 'füllung',
+            'schmerz', 'pain', 'weh', 'implantat', 'krone', 'filling',
             'weisheitszahn', 'zahnfleisch', 'blutet', 'geschwollen'
         ]):
             # Bereits spezifisch genug - verwende medizinische Nachfragen
-            return await medizinische_nachfragen_stellen(context, patient_input)
+            return await ask_medical_followup_questions(context, patient_input)
 
         # 6. UNKLARE EINGABE - Höfliche Nachfrage
         else:
-            return "Wieso benötigen Sie einen Termin?"
+            return "Wieso benötigen Sie einen appointment?"
 
     except Exception as e:
         logging.error(f"Fehler bei Grund-Nachfragen: {e}")
-        return "Wieso benötigen Sie einen Termin?"
+        return "Wieso benötigen Sie einen appointment?"
 
 @function_tool()
-async def intelligente_grund_nachfragen(
+async def smart_reason_followup(
     context: RunContext,
     patient_input: str
 ) -> str:
     """
-    🤔 INTELLIGENTE GRUND-NACHFRAGEN: Fragt spezifisch nach dem Grund für den Termin
-    - Wenn kein Grund angegeben: "Wofür benötigen Sie einen Termin?"
+    🤔 INTELLIGENTE GRUND-NACHFRAGEN: Fragt spezifisch nach dem Grund für den appointment
+    - Wenn kein Grund angegeben: "Wofür benötigen Sie einen appointment?"
     - Bei "Kontrolle": "Gibt es einen besonderen Grund oder nur normale Untersuchung?"
     - Bei vagen Angaben: Spezifische Nachfragen
 
-    patient_input: Die Eingabe des Patienten
+    patient_input: Die Eingabe des patients
     """
     try:
         input_lower = patient_input.lower()
 
         # 1. KEIN GRUND ERKANNT - Allgemeine Nachfrage
         if any(phrase in input_lower for phrase in [
-            'brauche einen termin', 'möchte einen termin', 'termin vereinbaren',
-            'termin buchen', 'appointment', 'kann ich einen termin'
+            'brauche einen appointment', 'möchte einen appointment', 'appointment vereinbaren',
+            'appointment buchen', 'appointment', 'kann ich einen appointment'
         ]) and not any(grund in input_lower for grund in [
             'schmerz', 'weh', 'kontrolle', 'untersuchung', 'reinigung', 'implantat',
-            'krone', 'füllung', 'zahnfleisch', 'weisheitszahn', 'bleaching', 'notfall'
+            'krone', 'filling', 'zahnfleisch', 'weisheitszahn', 'bleaching', 'emergency'
         ]):
-            return "Gerne vereinbare ich einen Termin für Sie. Wofür benötigen Sie denn den Termin? Haben Sie Beschwerden oder ist es für eine Kontrolle?"
+            return "Gladly vereinbare ich einen appointment für Sie. Wofür benötigen Sie denn den appointment? Haben Sie Beschwerden oder ist es für eine Kontrolle?"
 
         # 2. KONTROLLE/UNTERSUCHUNG - Spezifische Nachfrage
         elif any(word in input_lower for word in ['kontrolle', 'untersuchung', 'check', 'vorsorge']):
             return "Verstehe, Sie möchten zur Kontrolle kommen. Gibt es einen besonderen Grund oder Beschwerden, oder ist es einfach eine normale Vorsorgeuntersuchung?"
 
         # 3. REINIGUNG - Nachfrage nach Zusätzlichem
-        elif any(word in input_lower for word in ['reinigung', 'zahnreinigung', 'prophylaxe']):
-            return "Sehr gut, eine professionelle Zahnreinigung. Soll das mit einer Kontrolle kombiniert werden oder haben Sie zusätzliche Beschwerden?"
+        elif any(word in input_lower for word in ['reinigung', 'dental cleaning', 'prophylaxe']):
+            return "Sehr gut, eine professionelle dental cleaning. Soll das mit einer Kontrolle kombiniert werden oder haben Sie zusätzliche Beschwerden?"
 
         # 4. VAGE BEGRIFFE - Spezifische Nachfragen
         elif any(word in input_lower for word in ['problem', 'beschwerden', 'etwas', 'schauen']):
-            return "Ich verstehe, Sie haben ein Problem. Können Sie mir sagen, was genau Sie beschäftigt? Haben Sie Schmerzen oder geht es um etwas Bestimmtes?"
+            return "Ich verstehe, Sie haben ein Problem. Können Sie mir sagen, was genau Sie beschäftigt? Haben Sie pain oder geht es um etwas Bestimmtes?"
 
         # 5. ZAHNFLEISCH - Detaillierte Nachfrage
         elif any(word in input_lower for word in ['zahnfleisch', 'blutet', 'geschwollen']):
@@ -2137,7 +2137,7 @@ async def intelligente_grund_nachfragen(
 
         # 6. ZAHN ALLGEMEIN - Spezifische Nachfrage
         elif any(word in input_lower for word in ['zahn', 'zähne']) and not any(word in input_lower for word in ['schmerz', 'weh']):
-            return "Es geht um einen Zahn. Haben Sie Schmerzen oder ist etwas anderes mit dem Zahn? Ist er abgebrochen oder haben Sie andere Beschwerden?"
+            return "Es geht um einen Zahn. Haben Sie pain oder ist etwas anderes mit dem Zahn? Ist er abgebrochen oder haben Sie andere Beschwerden?"
 
         # 7. ÄSTHETIK/AUSSEHEN - Beratungsansatz
         elif any(word in input_lower for word in ['schön', 'aussehen', 'ästhetik', 'weiß', 'gerade']):
@@ -2149,27 +2149,27 @@ async def intelligente_grund_nachfragen(
 
         # 9. ANGST/NERVÖS - Einfühlsame Nachfrage
         elif any(word in input_lower for word in ['angst', 'nervös', 'furcht', 'scared']):
-            return "Ich verstehe, dass Zahnarztbesuche manchmal Angst machen können. Wir nehmen uns gerne Zeit für Sie. Wofür benötigen Sie den Termin?"
+            return "Ich verstehe, dass Zahnarztbesuche manchmal Angst machen können. Wir nehmen uns Gladly Zeit für Sie. Wofür benötigen Sie den appointment?"
 
-        # 10. DRINGEND/SCHNELL - Notfall-Einschätzung
-        elif any(word in input_lower for word in ['dringend', 'schnell', 'sofort', 'heute', 'morgen']):
-            return "Das klingt dringend. Haben Sie Schmerzen oder was ist passiert? Je nach Situation können wir einen Notfalltermin arrangieren."
+        # 10. urgent/SCHNELL - emergency-Einschätzung
+        elif any(word in input_lower for word in ['urgent', 'schnell', 'sofort', 'today', 'tomorrow']):
+            return "Das klingt urgent. Haben Sie pain oder was ist passiert? Je nach Situation können wir einen Notfalltermin arrangieren."
 
         # 11. BEREITS SPEZIFISCH - Keine weitere Nachfrage nötig
         elif any(word in input_lower for word in [
-            'schmerz', 'schmerzen', 'weh', 'implantat', 'krone', 'füllung',
-            'weisheitszahn', 'wurzelbehandlung', 'extraktion', 'bleaching'
+            'schmerz', 'pain', 'weh', 'implantat', 'krone', 'filling',
+            'weisheitszahn', 'root canal', 'extraction', 'bleaching'
         ]):
             # Bereits spezifisch genug - verwende medizinische Nachfragen
-            return await medizinische_nachfragen_stellen(context, patient_input)
+            return await ask_medical_followup_questions(context, patient_input)
 
         # 12. UNKLARE EINGABE - Höfliche Nachfrage
         else:
-            return "Gerne helfe ich Ihnen weiter. Können Sie mir sagen, wofür Sie einen Termin benötigen? Haben Sie Beschwerden oder geht es um eine Kontrolle?"
+            return "Gladly helfe ich Ihnen weiter. Können Sie mir sagen, wofür Sie einen appointment benötigen? Haben Sie Beschwerden oder geht es um eine Kontrolle?"
 
     except Exception as e:
         logging.error(f"Fehler bei Grund-Nachfragen: {e}")
-        return "Gerne vereinbare ich einen Termin für Sie. Wofür benötigen Sie denn den Termin?"
+        return "Gladly vereinbare ich einen appointment für Sie. Wofür benötigen Sie denn den appointment?"
 
 @function_tool()
 async def conversational_repair(
@@ -2181,7 +2181,7 @@ async def conversational_repair(
     - Erkennt "Nein, lieber 11:30" und korrigiert letzten Terminvorschlag
     - Stateful Dialog ohne Neustart
 
-    user_input: Korrektur-Eingabe des Patienten
+    user_input: Korrektur-Eingabe des patients
     """
     try:
         # Prüfe ob es eine Korrektur ist
@@ -2195,25 +2195,25 @@ async def conversational_repair(
                 # Speichere korrigierten Slot
                 context_stack.set_last_slot(corrected_slot)
 
-                return f"Verstehe! Sie möchten lieber {corrected_slot['wochentag']}, {corrected_slot['datum']} um {corrected_slot['uhrzeit']} Uhr. Lassen Sie mich das für Sie prüfen."
+                return f"Verstehe! Sie möchten lieber {corrected_slot['wochentag']}, {corrected_slot['datum']} um {corrected_slot['uhrzeit']} o'clock. Lassen Sie mich das für Sie prüfen."
             else:
-                return "Entschuldigung, ich habe Ihre Korrektur nicht ganz verstanden. Können Sie mir sagen, wann Sie den Termin lieber hätten?"
+                return "Sorry, ich habe Ihre Korrektur nicht ganz verstanden. Können Sie mir sagen, wann Sie den appointment lieber hätten?"
 
         # Keine Korrektur erkannt
         return "Wie kann ich Ihnen weiter helfen?"
 
     except Exception as e:
         logging.error(f"Fehler bei Conversational Repair: {e}")
-        return "Entschuldigung, können Sie das nochmal sagen?"
+        return "Sorry, können Sie das nochmal sagen?"
 
 @function_tool()
-async def notfall_priorisierung(
+async def emergency_prioritization(
     context: RunContext,
     symptome: str,
     schmerzskala: int = 0
 ) -> str:
     """
-    Priorisiert Notfälle basierend auf Symptomen und Schmerzintensität.
+    Priorisiert emergencies basierend auf Symptomen und Schmerzintensität.
     Schlägt sofortige Terminoptionen vor.
     """
     try:
@@ -2221,18 +2221,18 @@ async def notfall_priorisierung(
         if schmerzskala < 0 or schmerzskala > 10:
             schmerzskala = 0
         
-        # Definiere Notfall-Keywords
+        # Definiere emergency-Keywords
         notfall_keywords = [
             "unfall", "blutung", "geschwollen", "fieber", "eiter",
             "gebrochen", "verletzt", "stark", "unerträglich", "akut"
         ]
         
-        # Prüfe auf Notfall-Keywords
+        # Prüfe auf emergency-Keywords
         ist_notfall = any(keyword in symptome.lower() for keyword in notfall_keywords)
         
-        # Lernfähigkeit: Notfall aufzeichnen
+        # Lernfähigkeit: emergency aufzeichnen
         if ist_notfall or schmerzskala >= 5:
-            lernsystem.anfrage_aufzeichnen("Notfall", {
+            lernsystem.anfrage_aufzeichnen("emergency", {
                 "symptome": symptome,
                 "schmerzskala": schmerzskala,
                 "keywords": [k for k in notfall_keywords if k in symptome.lower()]
@@ -2245,18 +2245,18 @@ async def notfall_priorisierung(
             wartezeit = "Sofort - innerhalb 30 Minuten"
         elif schmerzskala >= 5:
             prioritaet = "MITTEL"
-            empfehlung = "Termin heute noch empfohlen"
+            empfehlung = "appointment today noch empfohlen"
             wartezeit = "Innerhalb 2-4 Stunden"
         else:
             prioritaet = "NIEDRIG"
-            empfehlung = "Regulärer Termin ausreichend"
-            wartezeit = "Nächster verfügbarer Termin"
+            empfehlung = "Regulärer appointment ausreichend"
+            wartezeit = "Nächster verfügbarer appointment"
         
         # Hole nächste verfügbare Notfalltermine
         from datetime import datetime, timedelta
         jetzt = datetime.now()
         
-        antwort = f"**Notfall-Bewertung:**\n\n"
+        antwort = f"**emergency-Bewertung:**\n\n"
         antwort += f"**Symptome**: {symptome}\n"
         if schmerzskala > 0:
             antwort += f"**Schmerzskala**: {schmerzskala}/10\n"
@@ -2266,31 +2266,31 @@ async def notfall_priorisierung(
         
         if prioritaet == "HOCH":
             antwort += "**Sofortmaßnahmen:**\n"
-            antwort += "- Kommen Sie SOFORT in die Praxis\n"
+            antwort += "- Kommen Sie SOFORT in die practice\n"
             antwort += "- Bei starker Blutung: Mit sauberem Tuch Druck ausüben\n"
             antwort += "- Bei Schwellung: Kühlen mit Eis (in Tuch eingewickelt)\n"
-            antwort += "- Bei starken Schmerzen: Ibuprofen 400mg (falls keine Allergie)\n\n"
+            antwort += "- Bei starken pain: Ibuprofen 400mg (falls keine Allergie)\n\n"
             antwort += "**Notfallnummer**: +49 30 12345678\n"
         elif prioritaet == "MITTEL":
-            # Suche nächste verfügbare Termine heute
-            heute = jetzt.strftime("%Y-%m-%d")
-            verfuegbare = appointment_manager.get_verfuegbare_termine_tag(heute)
+            # Suche nächste verfügbare appointments today
+            today = jetzt.strftime("%Y-%m-%d")
+            verfuegbare = appointment_manager.get_verfuegbare_termine_tag(today)
             
             if verfuegbare:
-                antwort += f"**Verfügbare Termine heute:**\n"
-                for termin in verfuegbare[:3]:
-                    antwort += f"- {termin}\n"
+                antwort += f"**Verfügbare appointments today:**\n"
+                for appointment in verfuegbare[:3]:
+                    antwort += f"- {appointment}\n"
             else:
-                antwort += "Heute keine regulären Termine mehr, aber Notfalltermin möglich.\n"
+                antwort += "today keine regulären appointments mehr, aber Notfalltermin möglich.\n"
         
         return antwort
         
     except Exception as e:
-        logging.error(f"Fehler bei Notfall-Priorisierung: {e}")
-        return "Bitte beschreiben Sie Ihre Symptome genauer, damit ich die Dringlichkeit einschätzen kann."
+        logging.error(f"Fehler bei emergency-Priorisierung: {e}")
+        return "Please beschreiben Sie Ihre Symptome genauer, damit ich die Dringlichkeit einschätzen kann."
 
 @function_tool()
-async def wartezeit_schaetzung(
+async def waiting_time_estimation(
     context: RunContext,
     datum: str,
     uhrzeit: str
@@ -2311,31 +2311,31 @@ async def wartezeit_schaetzung(
         
         # Durchschnittliche Behandlungsdauern (in Minuten)
         behandlungsdauern = {
-            "Kontrolluntersuchung": 30,
-            "Zahnreinigung": 45,
-            "Füllung": 60,
-            "Wurzelbehandlung": 90,
+            "check-up": 30,
+            "dental cleaning": 45,
+            "filling": 60,
+            "root canal": 90,
             "Zahnentfernung": 45,
             "Beratung": 30,
-            "Notfall": 45
+            "emergency": 45
         }
         
         # Berechne geschätzte Wartezeit
         geschaetzte_wartezeit = 0
         aktuelle_zeit = datetime.strptime(f"{datum} 09:00", "%Y-%m-%d %H:%M")
         
-        for termin in tagesplan:
-            termin_start = datetime.strptime(f"{datum} {termin['uhrzeit']}", "%Y-%m-%d %H:%M")
+        for appointment in tagesplan:
+            termin_start = datetime.strptime(f"{datum} {appointment['uhrzeit']}", "%Y-%m-%d %H:%M")
             
-            # Wenn Termin vor dem angefragten Zeitpunkt
+            # Wenn appointment vor dem angefragten Zeitpunkt
             if termin_start < termin_zeit:
-                behandlungsart = termin.get('behandlung', 'Kontrolluntersuchung')
+                behandlungsart = appointment.get('behandlung', 'check-up')
                 dauer = behandlungsdauern.get(behandlungsart, 30)
                 
                 # Füge 10% Puffer für mögliche Verzögerungen hinzu
                 dauer_mit_puffer = int(dauer * 1.1)
                 
-                # Wenn dieser Termin noch nicht abgeschlossen sein sollte
+                # Wenn dieser appointment noch nicht abgeschlossen sein sollte
                 termin_ende = termin_start + timedelta(minutes=dauer_mit_puffer)
                 if termin_ende > termin_zeit:
                     geschaetzte_wartezeit += (termin_ende - termin_zeit).seconds // 60
@@ -2348,7 +2348,7 @@ async def wartezeit_schaetzung(
             antwort += "**Mögliche Gründe für Wartezeit:**\n"
             antwort += "- Vorherige Behandlungen dauern länger als geplant\n"
             antwort += "- Notfallpatienten wurden eingeschoben\n\n"
-            antwort += "**Empfehlung**: Bitte kommen Sie trotzdem pünktlich, "
+            antwort += "**Empfehlung**: Please kommen Sie trotzdem pünktlich, "
             antwort += "da sich die Situation ändern kann.\n"
         else:
             antwort += "**Keine Wartezeit erwartet** ✓\n\n"
@@ -2357,25 +2357,25 @@ async def wartezeit_schaetzung(
         # Füge aktuelle Auslastung hinzu
         termine_heute = len(tagesplan)
         if termine_heute > 15:
-            antwort += "\n**Hinweis**: Heute ist ein sehr voller Tag in der Praxis."
+            antwort += "\n**Hinweis**: today ist ein sehr voller Tag in der practice."
         elif termine_heute < 8:
-            antwort += "\n**Hinweis**: Heute ist es relativ ruhig in der Praxis."
+            antwort += "\n**Hinweis**: today ist es relativ ruhig in der practice."
         
         return antwort
         
     except Exception as e:
         logging.error(f"Fehler bei Wartezeit-Schätzung: {e}")
-        return "Ich kann die Wartezeit momentan nicht einschätzen. Bitte rufen Sie uns direkt an."
+        return "Ich kann die Wartezeit momentan nicht einschätzen. Please rufen Sie uns direkt an."
 
 @function_tool()
-async def termin_erinnerung_planen(
+async def schedule_appointment_reminder(
     context: RunContext,
     termin_id: str,
     erinnerung_typ: str = "sms"
 ) -> str:
     """
     Plant automatische Terminerinnerungen per SMS, Anruf oder E-Mail.
-    Standard: 24 Stunden und 2 Stunden vor dem Termin.
+    Standard: 24 Stunden und 2 Stunden vor dem appointment.
     """
     try:
         # Validiere Erinnerungstyp
@@ -2384,16 +2384,16 @@ async def termin_erinnerung_planen(
             erinnerung_typ = "sms"
         
         # Hole Termindetails
-        termin = appointment_manager.get_termin_by_id(termin_id)
-        if not termin:
-            return "Termin nicht gefunden. Bitte überprüfen Sie die Termin-ID."
+        appointment = appointment_manager.get_termin_by_id(termin_id)
+        if not appointment:
+            return "appointment nicht gefunden. Please überprüfen Sie die appointment-ID."
         
         # Extrahiere Termininfos
-        datum = termin.get('datum')
-        uhrzeit = termin.get('uhrzeit')
-        patient_name = termin.get('patient_name')
-        telefon = termin.get('telefon')
-        behandlung = termin.get('behandlung', 'Termin')
+        datum = appointment.get('datum')
+        uhrzeit = appointment.get('uhrzeit')
+        patient_name = appointment.get('patient_name')
+        telefon = appointment.get('telefon')
+        behandlung = appointment.get('behandlung', 'appointment')
         
         # Erstelle Erinnerungsplan
         from datetime import datetime, timedelta
@@ -2419,8 +2419,8 @@ async def termin_erinnerung_planen(
         
         # Speichere Erinnerungseinstellungen (in echter Implementierung würde dies in DB gespeichert)
         antwort = f"**Terminerinnerung eingerichtet:**\n\n"
-        antwort += f"**Patient**: {patient_name}\n"
-        antwort += f"**Termin**: {datum} um {uhrzeit}\n"
+        antwort += f"**patient**: {patient_name}\n"
+        antwort += f"**appointment**: {datum} um {uhrzeit}\n"
         antwort += f"**Behandlung**: {behandlung}\n"
         antwort += f"**Erinnerungstyp**: {erinnerung_typ.upper()}\n\n"
         
@@ -2434,12 +2434,12 @@ async def termin_erinnerung_planen(
             
             if erinnerung_typ in ["sms", "alle"]:
                 antwort += f"SMS an {telefon}:\n"
-                antwort += f"'Guten Tag {patient_name}, dies ist eine Erinnerung an Ihren "
-                antwort += f"Termin am {datum} um {uhrzeit} in der Zahnarztpraxis Dr. Weber. "
-                antwort += "Bei Verhinderung bitte rechtzeitig absagen: 030-12345678'\n\n"
+                antwort += f"'Good day {patient_name}, dies ist eine Erinnerung an Ihren "
+                antwort += f"appointment am {datum} um {uhrzeit} in der Dental Practice Dr. Weber. "
+                antwort += "Bei Verhinderung Please rechtzeitig absagen: 030-12345678'\n\n"
             
             if erinnerung_typ in ["email", "alle"]:
-                antwort += "E-Mail-Betreff: 'Terminerinnerung - Zahnarztpraxis Dr. Weber'\n"
+                antwort += "E-Mail-Betreff: 'Terminerinnerung - Dental Practice Dr. Weber'\n"
                 antwort += "Inhalt: Formatierte HTML-E-Mail mit Termindetails und Praxisadresse\n\n"
             
             if erinnerung_typ in ["anruf", "alle"]:
@@ -2447,32 +2447,32 @@ async def termin_erinnerung_planen(
             
             antwort += "✓ **Erinnerungen erfolgreich aktiviert**"
         else:
-            antwort += "⚠️ **Hinweis**: Termin ist zu nah, keine automatischen Erinnerungen möglich.\n"
-            antwort += "Bitte erinnern Sie den Patienten manuell."
+            antwort += "⚠️ **Hinweis**: appointment ist zu nah, keine automatischen Erinnerungen möglich.\n"
+            antwort += "Please erinnern Sie den patients manuell."
         
         return antwort
         
     except Exception as e:
         logging.error(f"Fehler bei Terminerinnerung: {e}")
-        return "Fehler beim Einrichten der Terminerinnerung. Bitte versuchen Sie es erneut."
+        return "Fehler beim Einrichten der Terminerinnerung. Please versuchen Sie es erneut."
 
 @function_tool()
-async def rezept_erneuern(
+async def renew_prescription(
     context: RunContext,
     patient_telefon: str,
     medikament: str
 ) -> str:
     """
-    Verwaltet Rezeptverlängerungen für Patienten.
-    Prüft Berechtigung und erstellt Anfrage für den Arzt.
+    Verwaltet Rezeptverlängerungen für patients.
+    Prüft Berechtigung und erstellt Anfrage für den doctor.
     """
     try:
         # Hole Patientenhistorie
-        historie = appointment_manager.get_patientenhistorie(patient_telefon)
+        historie = appointment_manager.get_patient_history(patient_telefon)
         
-        # Prüfe ob Patient bekannt ist
+        # Prüfe ob patient bekannt ist
         if not historie:
-            return "Patient nicht in unserer Datenbank gefunden. Bitte vereinbaren Sie einen Termin für eine Rezeptausstellung."
+            return "patient nicht in unserer Datenbank gefunden. Please vereinbaren Sie einen appointment für eine Rezeptausstellung."
         
         # Definiere häufige Zahnmedikamente
         haeufige_medikamente = {
@@ -2494,7 +2494,7 @@ async def rezept_erneuern(
         anfrage_datum = datetime.now().strftime("%Y-%m-%d %H:%M")
         
         antwort = f"**Rezeptverlängerung angefragt:**\n\n"
-        antwort += f"**Patient**: Telefon {patient_telefon}\n"
+        antwort += f"**patient**: Telefon {patient_telefon}\n"
         antwort += f"**Medikament**: {medikament}\n"
         antwort += f"**Kategorie**: {medikament_typ.title()}\n"
         antwort += f"**Anfragedatum**: {anfrage_datum}\n\n"
@@ -2502,7 +2502,7 @@ async def rezept_erneuern(
         # Prüfungen basierend auf Medikamententyp
         if medikament_typ == "antibiotika":
             antwort += "⚠️ **Hinweis**: Antibiotika benötigen eine aktuelle Untersuchung.\n"
-            antwort += "Der Arzt muss die Notwendigkeit prüfen.\n\n"
+            antwort += "Der doctor muss die Notwendigkeit prüfen.\n\n"
         elif medikament_typ == "schmerzmittel":
             antwort += "ℹ️ **Info**: Schmerzmittel sollten nur kurzfristig verwendet werden.\n"
             antwort += "Bei längerem Bedarf ist eine Untersuchung empfohlen.\n\n"
@@ -2512,12 +2512,12 @@ async def rezept_erneuern(
         antwort += "**Nächste Schritte:**\n"
         antwort += "1. Dr. Weber wird die Anfrage prüfen\n"
         antwort += "2. Sie erhalten eine SMS/Anruf sobald das Rezept bereit ist\n"
-        antwort += "3. Abholung in der Praxis oder Zusendung per Post möglich\n\n"
+        antwort += "3. Abholung in der practice oder Zusendung per Post möglich\n\n"
         
         # Bearbeitungszeit
         antwort += "**Bearbeitungszeit**: \n"
         antwort += "- Normale Rezepte: 1-2 Werktage\n"
-        antwort += "- Dringende Fälle: Heute noch möglich\n\n"
+        antwort += "- Dringende Fälle: today noch möglich\n\n"
         
         antwort += "✓ **Anfrage erfolgreich eingereicht**\n"
         antwort += f"Referenznummer: RX{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -2526,20 +2526,20 @@ async def rezept_erneuern(
         
     except Exception as e:
         logging.error(f"Fehler bei Rezeptverlängerung: {e}")
-        return "Fehler bei der Rezeptanfrage. Bitte rufen Sie uns direkt an."
+        return "Fehler bei der Rezeptanfrage. Please rufen Sie uns direkt an."
 
 @function_tool()
-async def behandlungsplan_status(
+async def treatment_plan_status(
     context: RunContext,
     patient_telefon: str
 ) -> str:
     """
-    Verfolgt mehrteilige Behandlungspläne (z.B. Kieferorthopädie, Implantate).
+    Verfolgt mehrteilige Behandlungspläne (z.B. orthodontics, Implantate).
     Zeigt Fortschritt und nächste Schritte an.
     """
     try:
         # Hole Patientenhistorie
-        historie = appointment_manager.get_patientenhistorie(patient_telefon)
+        historie = appointment_manager.get_patient_history(patient_telefon)
         
         if not historie:
             return "Kein Behandlungsplan für diese Telefonnummer gefunden."
@@ -2557,23 +2557,23 @@ async def behandlungsplan_status(
                 ],
                 "dauer": "4-8 Monate"
             },
-            "Kieferorthopädie": {
+            "orthodontics": {
                 "schritte": [
                     "Erstuntersuchung und Abdrücke",
                     "Behandlungsplanung",
-                    "Einsetzen der Zahnspange",
+                    "Einsetzen der braces",
                     "Monatliche Kontrollen",
                     "Feineinstellung",
                     "Retainer-Anpassung"
                 ],
                 "dauer": "12-24 Monate"
             },
-            "Wurzelbehandlung": {
+            "root canal": {
                 "schritte": [
                     "Diagnose und Röntgen",
                     "Erste Sitzung - Kanalöffnung",
                     "Zweite Sitzung - Reinigung",
-                    "Dritte Sitzung - Füllung",
+                    "Dritte Sitzung - filling",
                     "Kontrollröntgen",
                     "Krone (optional)"
                 ],
@@ -2585,18 +2585,18 @@ async def behandlungsplan_status(
         aktiver_plan = None
         abgeschlossene_schritte = []
         
-        for termin in historie:
-            behandlung = termin.get('behandlung', '').lower()
+        for appointment in historie:
+            behandlung = appointment.get('behandlung', '').lower()
             for plan_typ, plan_info in behandlungsplaene.items():
                 if plan_typ.lower() in behandlung:
                     aktiver_plan = plan_typ
                     abgeschlossene_schritte.append({
-                        'datum': termin.get('datum'),
-                        'behandlung': termin.get('behandlung')
+                        'datum': appointment.get('datum'),
+                        'behandlung': appointment.get('behandlung')
                     })
         
         antwort = f"**Behandlungsplan-Status:**\n\n"
-        antwort += f"**Patient**: Telefon {patient_telefon}\n\n"
+        antwort += f"**patient**: Telefon {patient_telefon}\n\n"
         
         if aktiver_plan:
             plan_info = behandlungsplaene[aktiver_plan]
@@ -2628,24 +2628,24 @@ async def behandlungsplan_status(
                 else:
                     antwort += f"○ {schritt} (ausstehend)\n"
             
-            # Nächster Termin
+            # Nächster appointment
             antwort += f"\n**Empfehlung**: "
             if fortschritt < len(plan_info['schritte']):
-                antwort += f"Vereinbaren Sie einen Termin für: {plan_info['schritte'][fortschritt]}"
+                antwort += f"Vereinbaren Sie einen appointment für: {plan_info['schritte'][fortschritt]}"
             else:
                 antwort += "Behandlungsplan abgeschlossen! Kontrolltermin in 6 Monaten empfohlen."
         else:
             antwort += "**Kein aktiver Behandlungsplan gefunden.**\n\n"
             if historie:
-                antwort += "**Letzte Termine:**\n"
-                for termin in historie[-3:]:
-                    antwort += f"- {termin.get('datum')}: {termin.get('behandlung')}\n"
+                antwort += "**Letzte appointments:**\n"
+                for appointment in historie[-3:]:
+                    antwort += f"- {appointment.get('datum')}: {appointment.get('behandlung')}\n"
         
         return antwort
         
     except Exception as e:
         logging.error(f"Fehler bei Behandlungsplan-Status: {e}")
-        return "Fehler beim Abrufen des Behandlungsplans. Bitte versuchen Sie es erneut."
+        return "Fehler beim Abrufen des Behandlungsplans. Please versuchen Sie es erneut."
 
 # Lernfähigkeit - Häufige Anfragen tracken
 from collections import defaultdict
@@ -2712,7 +2712,7 @@ class AnfragenLernsystem:
         
         # Analysiere Tageszeit-Muster
         jetzt = datetime.now()
-        tageszeit = "vormittag" if jetzt.hour < 12 else "nachmittag" if jetzt.hour < 18 else "abend"
+        tageszeit = "morning" if jetzt.hour < 12 else "afternoon" if jetzt.hour < 18 else "evening"
         
         # Häufige Anfragen für diese Tageszeit
         for anfrage in self.anfragen_cache["anfragen"][-100:]:  # Letzte 100 Anfragen
@@ -2730,12 +2730,12 @@ class AnfragenLernsystem:
 lernsystem = AnfragenLernsystem()
 
 @function_tool()
-async def lernfaehigkeit_analysieren(
+async def analyze_learning_capability(
     context: RunContext
 ) -> str:
     """
     Zeigt Lernstatistiken und häufige Anfragemuster.
-    Hilft der Praxis, Muster zu erkennen und Service zu verbessern.
+    Hilft der practice, Muster zu erkennen und Service zu verbessern.
     """
     try:
         # Hole häufigste Anfragen
@@ -2752,16 +2752,16 @@ async def lernfaehigkeit_analysieren(
             antwort += "\n**Erkannte Muster:**\n"
             
             # Analysiere Terminanfragen
-            termin_anfragen = sum(anzahl for typ, anzahl in haeufige if "termin" in typ.lower())
+            termin_anfragen = sum(anzahl for typ, anzahl in haeufige if "appointment" in typ.lower())
             if termin_anfragen > 20:
                 antwort += f"- Hohe Nachfrage nach Terminen ({termin_anfragen} Anfragen)\n"
                 antwort += "  → Empfehlung: Online-Terminbuchung einführen\n"
             
-            # Analysiere Notfälle
-            notfall_anfragen = sum(anzahl for typ, anzahl in haeufige if "notfall" in typ.lower())
+            # Analysiere emergencies
+            notfall_anfragen = sum(anzahl for typ, anzahl in haeufige if "emergency" in typ.lower())
             if notfall_anfragen > 5:
                 antwort += f"- Viele Notfallanfragen ({notfall_anfragen})\n"
-                antwort += "  → Empfehlung: Notfall-Sprechstunde erweitern\n"
+                antwort += "  → Empfehlung: emergency-Sprechstunde erweitern\n"
             
             # Zeitbasierte Muster
             antwort += "\n**Optimierungsvorschläge:**\n"
@@ -2779,7 +2779,7 @@ async def lernfaehigkeit_analysieren(
         return "Fehler bei der Analyse der Lernstatistiken."
 
 @function_tool()
-async def haeufige_frage_beantworten(
+async def answer_frequent_question(
     context: RunContext,
     frage_kategorie: str
 ) -> str:
@@ -2796,20 +2796,20 @@ async def haeufige_frage_beantworten(
         # Vordefinierte optimierte Antworten für häufige Fragen
         optimierte_antworten = {
             "oeffnungszeiten": {
-                "basis": "Unsere Öffnungszeiten sind:\nMo-Fr: 9:00-11:30 und 14:00-17:30\nSa: 9:00-12:30\nSo: Geschlossen",
-                "haeufig": "**Tipp**: Viele Patienten fragen nach Terminen am frühen Morgen oder späten Nachmittag."
+                "basis": "Unsere opening hours sind:\nMo-Fr: 9:00-11:30 und 14:00-17:30\nSa: 9:00-12:30\nSo: closed",
+                "haeufig": "**Tipp**: Viele patients fragen nach Terminen am frühen tomorrow oder späten afternoon."
             },
-            "schmerzen": {
-                "basis": "Bei akuten Schmerzen bieten wir Notfalltermine an.",
+            "pain": {
+                "basis": "Bei akuten pain bieten wir Notfalltermine an.",
                 "haeufig": "**Häufigste Schmerzursachen**: Karies (40%), Zahnfleischentzündung (30%), Wurzelentzündung (20%)"
             },
             "kosten": {
-                "basis": "Die Kosten hängen von der Behandlung ab. Gerne erstellen wir einen Kostenvoranschlag.",
-                "haeufig": "**Häufig gefragt**: Zahnreinigung 80-120€, Füllung 50-200€, Krone 600-1200€"
+                "basis": "Die Kosten hängen von der Behandlung ab. Gladly erstellen wir einen Kostenvoranschlag.",
+                "haeufig": "**Häufig gefragt**: dental cleaning 80-120€, filling 50-200€, Krone 600-1200€"
             },
             "terminabsage": {
-                "basis": "Termine können bis 24 Stunden vorher kostenfrei abgesagt werden.",
-                "haeufig": "**Tipp**: Die meisten Absagen erfolgen montags. Wir haben dann oft kurzfristig Termine frei."
+                "basis": "appointments können bis 24 Stunden vorher kostenfrei abgesagt werden.",
+                "haeufig": "**Tipp**: Die meisten Absagen erfolgen montags. Wir haben dann oft kurzfristig appointments frei."
             }
         }
         
@@ -2826,7 +2826,7 @@ async def haeufige_frage_beantworten(
                 antwort += f"Diese Frage wurde bereits {anfrage_anzahl} mal gestellt.\n"
         else:
             # Generische Antwort
-            antwort += "Ich helfe Ihnen gerne weiter. Können Sie Ihre Frage genauer formulieren?\n\n"
+            antwort += "Ich helfe Ihnen Gladly weiter. Können Sie Ihre Frage genauer formulieren?\n\n"
             
             # Zeige ähnliche häufige Fragen
             antwort += "**Häufig gestellte Fragen:**\n"
@@ -2838,16 +2838,16 @@ async def haeufige_frage_beantworten(
         
     except Exception as e:
         logging.error(f"Fehler bei häufiger Frage: {e}")
-        return "Entschuldigung, ich kann diese Frage momentan nicht beantworten."
+        return "Sorry, ich kann diese Frage momentan nicht beantworten."
 
 @function_tool()
-async def haeufige_behandlungsgruende(
+async def common_treatment_reasons(
     context: RunContext,
     patient_telefon: str = None
 ) -> str:
     """
     Zeigt häufige Behandlungsgründe basierend auf Lernstatistiken.
-    Kann personalisiert werden für bekannte Patienten.
+    Kann personalisiert werden für bekannte patients.
     """
     try:
         # Hole häufigste Terminanfragen
@@ -2856,41 +2856,41 @@ async def haeufige_behandlungsgruende(
                          for typ, anzahl in haeufige 
                          if typ.startswith("Termin_")]
         
-        antwort = "**Häufige Behandlungsgründe in unserer Praxis:**\n\n"
+        antwort = "**Häufige Behandlungsgründe in unserer practice:**\n\n"
         
         if termin_gruende:
             # Top 5 Gründe
             for i, (grund, anzahl) in enumerate(termin_gruende[:5], 1):
-                antwort += f"{i}. {grund} ({anzahl} Termine)\n"
+                antwort += f"{i}. {grund} ({anzahl} appointments)\n"
             
-            # Personalisierung für bekannte Patienten
+            # Personalisierung für bekannte patients
             if patient_telefon:
-                historie = appointment_manager.get_patientenhistorie(patient_telefon)
+                historie = appointment_manager.get_patient_history(patient_telefon)
                 if historie:
                     letzte_behandlung = historie[-1].get('behandlung', '') if historie else ''
-                    antwort += f"\n**Ihr letzter Termin**: {letzte_behandlung}\n"
+                    antwort += f"\n**Ihr letzter appointment**: {letzte_behandlung}\n"
                     
                     # Intelligenter Vorschlag basierend auf Zeitabstand
                     from datetime import datetime, timedelta
-                    if letzte_behandlung.lower() == "zahnreinigung":
-                        antwort += "💡 **Tipp**: Eine Zahnreinigung ist alle 6 Monate empfohlen.\n"
+                    if letzte_behandlung.lower() == "dental cleaning":
+                        antwort += "💡 **Tipp**: Eine dental cleaning ist alle 6 Monate empfohlen.\n"
                     elif "kontrolle" in letzte_behandlung.lower():
                         antwort += "💡 **Tipp**: Kontrolluntersuchungen sollten alle 6-12 Monate erfolgen.\n"
         else:
             # Standard-Gründe wenn noch keine Daten
-            antwort += "- Kontrolluntersuchung (alle 6 Monate empfohlen)\n"
-            antwort += "- Zahnreinigung (Prophylaxe)\n"
-            antwort += "- Zahnschmerzen oder Beschwerden\n"
-            antwort += "- Beratung für Zahnersatz\n"
+            antwort += "- check-up (alle 6 Monate empfohlen)\n"
+            antwort += "- dental cleaning (Prophylaxe)\n"
+            antwort += "- toothache oder Beschwerden\n"
+            antwort += "- Beratung für dental prosthetics\n"
             antwort += "- Ästhetische Behandlungen\n"
         
-        antwort += "\n**Für welche Behandlung möchten Sie einen Termin vereinbaren?**"
+        antwort += "\n**Für welche Behandlung möchten Sie einen appointment vereinbaren?**"
         
         return antwort
         
     except Exception as e:
         logging.error(f"Fehler bei häufigen Behandlungsgründen: {e}")
-        return "Wofür benötigen Sie denn den Termin?"
+        return "Wofür benötigen Sie denn den appointment?"
 
 # =====================================================================
 # 🏥 NEUE KALENDER-INTEGRATION: Sofia hat direkten Zugang zu Kalendar 
@@ -2904,7 +2904,7 @@ class KalenderClient:
         self.client = httpx.AsyncClient(timeout=30.0)
     
     async def get_next_available(self) -> dict:
-        """Findet nächsten freien Termin"""
+        """Findet nächsten freien appointment"""
         try:
             response = await self.client.get(f"{self.calendar_url}/api/sofia/next-available")
             return response.json()
@@ -2931,16 +2931,16 @@ class KalenderClient:
             return {"suggestions": [], "message": "Verbindungsfehler zum Kalender"}
     
     async def get_today_appointments(self) -> dict:
-        """Holt heutige Termine"""
+        """Holt heutige appointments"""
         try:
             response = await self.client.get(f"{self.calendar_url}/api/sofia/today")
             return response.json()
         except Exception as e:
-            logging.error(f"Fehler beim Abrufen heutiger Termine: {e}")
+            logging.error(f"Fehler beim Abrufen heutiger appointments: {e}")
             return {"appointments": [], "message": "Verbindungsfehler zum Kalender"}
     
     async def get_patient_appointments(self, phone: str) -> dict:
-        """Holt Termine eines Patienten"""
+        """Holt appointments eines patients"""
         try:
             response = await self.client.get(f"{self.calendar_url}/api/sofia/patient/{phone}")
             return response.json()
@@ -2951,7 +2951,7 @@ class KalenderClient:
     async def book_appointment(self, patient_name: str, patient_phone: str, 
                              requested_date: str, requested_time: str, 
                              treatment_type: str = None) -> dict:
-        """Bucht einen Termin über das Kalender-System"""
+        """Bucht einen appointment über das Kalender-System"""
         try:
             response = await self.client.post(
                 f"{self.calendar_url}/api/sofia/appointment",
@@ -2968,19 +2968,19 @@ class KalenderClient:
             logging.error(f"Fehler beim Terminbuchen: {e}")
             return {
                 "success": False,
-                "message": "Verbindungsfehler zum Kalender-System. Bitte versuchen Sie es später erneut."
+                "message": "Verbindungsfehler zum Kalender-System. Please versuchen Sie es später erneut."
             }
 
 # Globaler Kalender-Client
 kalender_client = KalenderClient()
 
 @function_tool()
-async def sofia_naechster_freier_termin(
+async def sofia_next_available_appointment(
     context: RunContext
 ) -> str:
     """
-    Sofia findet automatisch den nächsten freien Termin.
-    Perfekt wenn Patienten fragen: "Wann haben Sie den nächsten freien Termin?"
+    Sofia findet automatisch den nächsten freien appointment.
+    Perfekt wenn patients fragen: "Wann haben Sie den nächsten freien appointment?"
     """
     try:
         result = await kalender_client.get_next_available()
@@ -2989,29 +2989,29 @@ async def sofia_naechster_freier_termin(
             antwort = result["message"]
             if "allAvailableTimes" in result and len(result["allAvailableTimes"]) > 1:
                 weitere_zeiten = ", ".join(result["allAvailableTimes"][1:4])
-                antwort += f"\n\nWeitere verfügbare Zeiten an diesem Tag: {weitere_zeiten} Uhr."
+                antwort += f"\n\nWeitere verfügbare Zeiten an diesem Tag: {weitere_zeiten} o'clock."
             
-            antwort += "\n\nMöchten Sie diesen Termin buchen?"
+            antwort += "\n\nMöchten Sie diesen appointment buchen?"
             
             # CallManager Notiz
-            call_manager.add_note(f"Nächster freier Termin gefunden: {result.get('date')} um {result.get('time')}")
+            call_manager.add_note(f"Nächster freier appointment gefunden: {result.get('date')} um {result.get('time')}")
             
             return antwort
         else:
-            return result.get("message", "Leider keine freien Termine verfügbar.")
+            return result.get("message", "Leider keine freien appointments verfügbar.")
             
     except Exception as e:
-        logging.error(f"Fehler bei nächstem freien Termin: {e}")
-        return "Entschuldigung, ich kann gerade nicht auf den Kalender zugreifen. Bitte rufen Sie uns direkt an."
+        logging.error(f"Fehler bei nächstem freien appointment: {e}")
+        return "Sorry, ich kann gerade nicht auf den Kalender zugreifen. Please rufen Sie uns direkt an."
 
 @function_tool()
-async def sofia_termin_an_bestimmtem_tag(
+async def sofia_appointment_on_specific_day(
     context: RunContext,
     gewuenschtes_datum: str
 ) -> str:
     """
     Sofia prüft Verfügbarkeit an einem bestimmten Tag.
-    Nutzen wenn Patient fragt: "Haben Sie am Freitag Zeit?" oder "Was ist am 25. Juli frei?"
+    Nutzen wenn patient fragt: "Haben Sie am Friday Zeit?" oder "Was ist am 25. July frei?"
     
     Args:
         gewuenschtes_datum: Datum im Format YYYY-MM-DD oder deutsch (z.B. "2024-07-25")
@@ -3038,15 +3038,15 @@ async def sofia_termin_an_bestimmtem_tag(
             
         elif result.get("isWeekend"):
             antwort = result["message"]
-            antwort += "\n\nUnsere Öffnungszeiten sind Montag bis Freitag von 8:00 bis 18:00 Uhr."
+            antwort += "\n\nUnsere opening hours sind Monday bis Friday von 8:00 bis 18:00 o'clock."
             
         elif result.get("isPast"):
             antwort = result["message"]
-            # Automatisch nächsten freien Termin anbieten
+            # Automatisch nächsten freien appointment anbieten
             next_result = await kalender_client.get_next_available()
             if next_result.get("available"):
                 antwort += f"\n\n{next_result['message']}"
-                antwort += "\n\nSoll ich diesen Termin für Sie reservieren?"
+                antwort += "\n\nSoll ich diesen appointment für Sie reservieren?"
             
         else:
             antwort = result["message"]
@@ -3055,8 +3055,8 @@ async def sofia_termin_an_bestimmtem_tag(
             if suggestions.get("suggestions"):
                 antwort += "\n\nIch kann Ihnen diese Alternativen anbieten:\n"
                 for i, sugg in enumerate(suggestions["suggestions"][:3], 1):
-                    antwort += f"{i}. {sugg['formattedDate']} um {sugg['time']} Uhr\n"
-                antwort += "\nWelcher Termin würde Ihnen passen?"
+                    antwort += f"{i}. {sugg['formattedDate']} um {sugg['time']} o'clock\n"
+                antwort += "\nWelcher appointment würde Ihnen passen?"
         
         # CallManager Notiz
         call_manager.add_note(f"Verfügbarkeit geprüft für {gewuenschtes_datum}: {'verfügbar' if result.get('available') else 'nicht verfügbar'}")
@@ -3065,17 +3065,17 @@ async def sofia_termin_an_bestimmtem_tag(
         
     except Exception as e:
         logging.error(f"Fehler bei Terminprüfung für {gewuenschtes_datum}: {e}")
-        return f"Entschuldigung, ich kann die Verfügbarkeit für {gewuenschtes_datum} gerade nicht prüfen. Bitte versuchen Sie es erneut."
+        return f"Sorry, ich kann die Verfügbarkeit für {gewuenschtes_datum} gerade nicht prüfen. Please versuchen Sie es erneut."
 
 @function_tool()
-async def sofia_terminvorschlaege_intelligent(
+async def sofia_smart_appointment_suggestions(
     context: RunContext,
     anzahl_tage: int = 7,
     max_vorschlaege: int = 5
 ) -> str:
     """
     Sofia macht intelligente Terminvorschläge.
-    Nutzen wenn Patient sagt: "Schlagen Sie mir Termine vor" oder "Was haben Sie denn frei?"
+    Nutzen wenn patient sagt: "Schlagen Sie mir appointments vor" oder "Was haben Sie denn frei?"
     
     Args:
         anzahl_tage: Wie viele Tage in die Zukunft schauen (Standard: 7)
@@ -3085,18 +3085,18 @@ async def sofia_terminvorschlaege_intelligent(
         result = await kalender_client.get_suggestions(days=anzahl_tage, limit=max_vorschlaege)
         
         if result.get("suggestions") and len(result["suggestions"]) > 0:
-            antwort = "Gerne! Ich habe folgende Termine für Sie:\n\n"
+            antwort = "Gladly! Ich habe folgende appointments für Sie:\n\n"
             
             for i, suggestion in enumerate(result["suggestions"], 1):
-                antwort += f"**{i}. {suggestion['formattedDate']} um {suggestion['time']} Uhr**"
+                antwort += f"**{i}. {suggestion['formattedDate']} um {suggestion['time']} o'clock**"
                 if suggestion.get("availableCount", 0) > 1:
-                    antwort += f" (noch {suggestion['availableCount']} Termine an diesem Tag verfügbar)"
+                    antwort += f" (noch {suggestion['availableCount']} appointments an diesem Tag verfügbar)"
                 antwort += "\n"
             
-            antwort += "\nWelcher Termin passt Ihnen am besten? Ich reserviere ihn gerne für Sie."
+            antwort += "\nWelcher appointment passt Ihnen am besten? Ich reserviere ihn Gladly für Sie."
             
         else:
-            antwort = result.get("message", f"Leider sind in den nächsten {anzahl_tage} Tagen keine Termine frei.")
+            antwort = result.get("message", f"Leider sind in den nächsten {anzahl_tage} Tagen keine appointments frei.")
             antwort += "\n\nSoll ich in einem größeren Zeitraum schauen oder können Sie zu einem späteren Zeitpunkt anrufen?"
         
         # CallManager Notiz
@@ -3106,47 +3106,47 @@ async def sofia_terminvorschlaege_intelligent(
         
     except Exception as e:
         logging.error(f"Fehler bei Terminvorschlägen: {e}")
-        return "Entschuldigung, ich kann gerade keine Terminvorschläge erstellen. Bitte rufen Sie uns direkt an."
+        return "Sorry, ich kann gerade keine Terminvorschläge erstellen. Please rufen Sie uns direkt an."
 
 @function_tool()
-async def sofia_heutige_termine_abrufen(
+async def sofia_get_todays_appointments(
     context: RunContext
 ) -> str:
     """
-    Sofia kann heutige Termine abrufen.
-    Nutzen für interne Praxis-Anfragen oder wenn Patienten fragen ob heute viel los ist.
+    Sofia kann heutige appointments abrufen.
+    Nutzen für interne practice-Anfragen oder wenn patients fragen ob today viel los ist.
     """
     try:
         result = await kalender_client.get_today_appointments()
         
         if result.get("appointments") and len(result["appointments"]) > 0:
             count = result.get("count", len(result["appointments"]))
-            antwort = f"Heute haben wir {count} Termine geplant:\n\n"
+            antwort = f"today haben wir {count} appointments geplant:\n\n"
             antwort += result.get("message", "")
             
         else:
-            antwort = result.get("message", "Heute sind keine Termine geplant.")
+            antwort = result.get("message", "today sind keine appointments geplant.")
         
         # CallManager Notiz  
-        call_manager.add_note(f"Heutige Termine abgerufen: {result.get('count', 0)} Termine")
+        call_manager.add_note(f"Heutige appointments abgerufen: {result.get('count', 0)} appointments")
         
         return antwort
         
     except Exception as e:
-        logging.error(f"Fehler beim Abrufen heutiger Termine: {e}")
-        return "Entschuldigung, ich kann die heutigen Termine gerade nicht abrufen."
+        logging.error(f"Fehler beim Abrufen heutiger appointments: {e}")
+        return "Sorry, ich kann die heutigen appointments gerade nicht abrufen."
 
 @function_tool()
-async def sofia_meine_termine_finden_erweitert(
+async def sofia_find_my_appointments_extended(
     context: RunContext,
     telefonnummer: str
 ) -> str:
     """
-    Sofia findet Termine eines Patienten über Telefonnummer.
+    Sofia findet appointments eines patients über Telefonnummer.
     Erweiterte Version mit direktem Kalender-Zugriff.
     
     Args:
-        telefonnummer: Telefonnummer des Patienten
+        telefonnummer: Telefonnummer des patients
     """
     try:
         # Telefonnummer normalisieren
@@ -3156,40 +3156,40 @@ async def sofia_meine_termine_finden_erweitert(
         
         if result.get("appointments") and len(result["appointments"]) > 0:
             count = result.get("count", len(result["appointments"]))
-            antwort = f"Ich habe {count} Termine für Sie gefunden:\n\n"
+            antwort = f"Ich habe {count} appointments für Sie gefunden:\n\n"
             antwort += result.get("message", "")
             
-            antwort += "\n\nMöchten Sie einen Termin ändern oder haben Sie weitere Fragen?"
+            antwort += "\n\nMöchten Sie einen appointment ändern oder haben Sie weitere Fragen?"
             
         else:
-            antwort = result.get("message", "Sie haben aktuell keine Termine bei uns.")
-            antwort += "\n\nMöchten Sie einen neuen Termin vereinbaren?"
+            antwort = result.get("message", "Sie haben aktuell keine appointments bei uns.")
+            antwort += "\n\nMöchten Sie einen neuen appointment vereinbaren?"
         
         # CallManager Notiz
-        call_manager.add_note(f"Termine für Patient abgerufen (Tel: {phone_clean}): {result.get('count', 0)} gefunden")
+        call_manager.add_note(f"appointments für patient abgerufen (Tel: {phone_clean}): {result.get('count', 0)} gefunden")
         
         return antwort
         
     except Exception as e:
         logging.error(f"Fehler beim Abrufen der Patiententermine: {e}")
-        return "Entschuldigung, ich kann Ihre Termine gerade nicht abrufen. Bitte versuchen Sie es erneut."
+        return "Sorry, ich kann Ihre appointments gerade nicht abrufen. Please versuchen Sie es erneut."
 
 @function_tool()
-async def termin_buchen_calendar_system(
+async def book_appointment_calendar_system(
     context: RunContext,
     patient_name: str,
     phone: str,
     appointment_date: str,
     appointment_time: str,
-    treatment_type: str = "Kontrolluntersuchung"
+    treatment_type: str = "check-up"
 ) -> str:
     """
-    🏥 NEUE CALENDAR INTEGRATION: Bucht Termine direkt im Calendar System
+    🏥 NEUE CALENDAR INTEGRATION: Bucht appointments direkt im Calendar System
     Diese Funktion ersetzt die alten Terminbuchungsmethoden und sorgt dafür,
-    dass alle Termine sofort im visuellen Kalender angezeigt werden.
+    dass alle appointments sofort im visuellen Kalender angezeigt werden.
     
     Args:
-        patient_name: Vollständiger Name des Patienten
+        patient_name: Vollständiger Name des patients
         phone: Telefonnummer für Kontakt  
         appointment_date: Datum im Format YYYY-MM-DD
         appointment_time: Uhrzeit im Format HH:MM
@@ -3208,13 +3208,13 @@ async def termin_buchen_calendar_system(
         try:
             datetime.strptime(appointment_date, '%Y-%m-%d')
         except ValueError:
-            return "❌ Ungültiges Datumsformat. Bitte verwenden Sie YYYY-MM-DD."
+            return "❌ Ungültiges Datumsformat. Please verwenden Sie YYYY-MM-DD."
         
         # Zeit validieren
         try:
             datetime.strptime(appointment_time, '%H:%M')
         except ValueError:
-            return "❌ Ungültiges Zeitformat. Bitte verwenden Sie HH:MM."
+            return "❌ Ungültiges Zeitformat. Please verwenden Sie HH:MM."
         
         # Terminbuchung über Calendar System
         logging.info(f"🏥 CALENDAR BOOKING: {patient_name} für {appointment_date} {appointment_time}")
@@ -3227,20 +3227,20 @@ async def termin_buchen_calendar_system(
         )
         
         if result.get("success"):
-            antwort = f"✅ **Termin erfolgreich gebucht!**\n\n"
-            antwort += f"👤 **Patient:** {patient_name}\n"
+            antwort = f"✅ **appointment erfolgreich gebucht!**\n\n"
+            antwort += f"👤 **patient:** {patient_name}\n"
             antwort += f"📅 **Datum:** {appointment_date}\n" 
             antwort += f"🕐 **Uhrzeit:** {appointment_time}\n"
             antwort += f"🦷 **Behandlung:** {treatment_type}\n"
             antwort += f"📞 **Telefon:** {phone_clean}\n\n"
-            antwort += "🏥 **Der Termin erscheint sofort in unserem Kalender!**\n"
+            antwort += "🏥 **Der appointment erscheint sofort in unserem Kalender!**\n"
             antwort += "📧 Sie erhalten eine Bestätigung per SMS/E-Mail.\n"
-            antwort += "🔔 Wir erinnern Sie einen Tag vorher an Ihren Termin."
+            antwort += "🔔 Wir erinnern Sie einen Tag vorher an Ihren appointment."
             
             # CallManager Notiz
-            call_manager.add_note(f"Termin gebucht via Calendar: {patient_name} am {appointment_date} {appointment_time}")
+            call_manager.add_note(f"appointment gebucht via Calendar: {patient_name} am {appointment_date} {appointment_time}")
             
-            logging.info(f"✅ SUCCESS: Termin gebucht für {patient_name} am {appointment_date} {appointment_time}")
+            logging.info(f"✅ SUCCESS: appointment gebucht für {patient_name} am {appointment_date} {appointment_time}")
             return antwort
         else:
             error_msg = result.get("message", "Unbekannter Fehler")
@@ -3249,15 +3249,15 @@ async def termin_buchen_calendar_system(
             
             if "bereits vergeben" in error_msg or "taken" in error_msg:
                 antwort += "🔄 **Lass mich Alternativen für Sie finden...**\n"
-                # Hole alternative Termine
+                # Hole alternative appointments
                 suggestions = await kalender_client.get_suggestions(days=14, limit=3)
                 if suggestions.get("suggestions"):
-                    antwort += "\n✨ **Alternative Termine:**\n"
+                    antwort += "\n✨ **Alternative appointments:**\n"
                     for i, sugg in enumerate(suggestions["suggestions"][:3], 1):
-                        antwort += f"{i}. {sugg['formattedDate']} um {sugg['time']} Uhr\n"
-                    antwort += "\n💬 Welcher Termin würde Ihnen passen?"
+                        antwort += f"{i}. {sugg['formattedDate']} um {sugg['time']} o'clock\n"
+                    antwort += "\n💬 Welcher appointment würde Ihnen passen?"
                 else:
-                    antwort += "\n📞 Bitte rufen Sie uns an, damit wir einen passenden Termin finden."
+                    antwort += "\n📞 Please rufen Sie uns an, damit wir einen passenden appointment finden."
             
             # CallManager Notiz
             call_manager.add_note(f"Terminbuchung fehlgeschlagen: {error_msg}")
@@ -3266,5 +3266,5 @@ async def termin_buchen_calendar_system(
             return antwort
         
     except Exception as e:
-        logging.error(f"Fehler bei termin_buchen_calendar_system: {e}")
-        return f"❌ **Systemfehler:** Es gab ein technisches Problem bei der Terminbuchung. Bitte rufen Sie uns direkt an: 030 12345678"
+        logging.error(f"Fehler bei book_appointment_calendar_system: {e}")
+        return f"❌ **Systemfehler:** Es gab ein technisches Problem bei der Terminbuchung. Please rufen Sie uns direkt an: 030 12345678"

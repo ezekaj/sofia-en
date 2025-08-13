@@ -25,19 +25,19 @@ function initializeSocket() {
     socket.on('appointmentCreated', function(appointment) {
         console.log('New appointment created:', appointment);
         calendar.refetchEvents();
-        showNotification(`✅ Neuer Termin: ${appointment.patient_name}`, 'success');
+        showNotification(`✅ New appointment: ${appointment.patient_name}`, 'success');
     });
     
     socket.on('appointmentUpdated', function(data) {
         console.log('Appointment updated:', data);
         calendar.refetchEvents();
-        showNotification('📝 Termin aktualisiert', 'info');
+        showNotification('📝 Appointment updated', 'info');
     });
     
     socket.on('appointmentDeleted', function(data) {
         console.log('Appointment deleted:', data);
         calendar.refetchEvents();
-        showNotification('🗑️ Termin gelöscht', 'warning');
+        showNotification('🗑️ Appointment deleted', 'warning');
     });
 }
 
@@ -47,18 +47,18 @@ function initializeCalendar() {
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
-            left: 'prev,next heute',
+            left: 'prev,next today',
             center: 'title',
             right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay'
         },
         buttonText: {
-            today: 'Heute',
-            month: 'Monat',
-            week: 'Woche',
-            day: 'Tag',
-            year: 'Jahr'
+            today: 'Today',
+            month: 'Month',
+            week: 'Week',
+            day: 'Day',
+            year: 'Year'
         },
-        locale: 'de',
+        locale: 'en',
         firstDay: 1, // Monday
         slotMinTime: '08:00:00',
         slotMaxTime: '18:00:00',
@@ -101,7 +101,7 @@ function initializeCalendar() {
                 html: `
                     <div style="padding: 2px 4px;">
                         <strong>${props.patientName}</strong><br>
-                        <small>${props.treatmentType || 'Termin'}</small>
+                        <small>${props.treatmentType || 'Appointment'}</small>
                     </div>
                 `
             };
@@ -174,37 +174,37 @@ function createAppointment() {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            showNotification('❌ Fehler: ' + data.error, 'error');
+            showNotification('❌ Error: ' + data.error, 'error');
         } else {
-            showNotification('✅ Termin erfolgreich erstellt!', 'success');
+            showNotification('✅ Appointment successfully created!', 'success');
             closeModal();
             calendar.refetchEvents();
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('❌ Verbindungsfehler', 'error');
+        showNotification('❌ Connection error', 'error');
     });
 }
 
 function showAppointmentDetails(event) {
     const props = event.extendedProps;
-    const startTime = new Date(event.start).toLocaleTimeString('de-DE', {
+    const startTime = new Date(event.start).toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit'
     });
-    const date = new Date(event.start).toLocaleDateString('de-DE');
+    const date = new Date(event.start).toLocaleDateString('en-US');
     
     const details = `
-        📅 ${date} um ${startTime} Uhr
+        📅 ${date} at ${startTime}
         👤 ${props.patientName}
-        📞 ${props.phone || 'Keine Nummer'}
-        🦷 ${props.treatmentType || 'Allgemein'}
-        📝 ${props.notes || 'Keine Notizen'}
+        📞 ${props.phone || 'No phone'}
+        🦷 ${props.treatmentType || 'General'}
+        📝 ${props.notes || 'No notes'}
         ✅ Status: ${getStatusText(props.status)}
     `;
     
-    if (confirm(`${details}\n\nMöchten Sie diesen Termin löschen?`)) {
+    if (confirm(`${details}\n\nWould you like to delete this appointment?`)) {
         deleteAppointment(event.id);
     }
 }
@@ -216,15 +216,15 @@ function deleteAppointment(appointmentId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('🗑️ Termin gelöscht', 'success');
+            showNotification('🗑️ Appointment deleted', 'success');
             calendar.refetchEvents();
         } else {
-            showNotification('❌ Fehler beim Löschen', 'error');
+            showNotification('❌ Error deleting', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('❌ Verbindungsfehler', 'error');
+        showNotification('❌ Connection error', 'error');
     });
 }
 
@@ -248,36 +248,36 @@ function updateAppointmentTime(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('📝 Termin verschoben', 'success');
+            showNotification('📝 Appointment moved', 'success');
         } else {
-            showNotification('❌ Fehler beim Verschieben', 'error');
+            showNotification('❌ Error moving appointment', 'error');
             calendar.refetchEvents(); // Revert on error
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('❌ Verbindungsfehler', 'error');
+        showNotification('❌ Connection error', 'error');
         calendar.refetchEvents(); // Revert on error
     });
 }
 
 function refreshCalendar() {
     calendar.refetchEvents();
-    showNotification('🔄 Kalender aktualisiert', 'info');
+    showNotification('🔄 Calendar updated', 'info');
 }
 
 function showToday() {
     calendar.today();
-    showNotification('📅 Heute angezeigt', 'info');
+    showNotification('📅 Showing today', 'info');
 }
 
 function updateConnectionStatus(connected) {
     const statusEl = document.getElementById('connectionStatus');
     if (connected) {
-        statusEl.textContent = '🟢 Verbunden - Live Updates';
+        statusEl.textContent = '🟢 Connected - Live Updates';
         statusEl.className = 'connection-status connected';
     } else {
-        statusEl.textContent = '🔴 Verbindung getrennt';
+        statusEl.textContent = '🔴 Disconnected';
         statusEl.className = 'connection-status disconnected';
     }
 }
@@ -343,9 +343,9 @@ function calculateEndTime(startTime, durationMinutes) {
 
 function getStatusText(status) {
     switch(status) {
-        case 'confirmed': return 'Bestätigt';
-        case 'cancelled': return 'Abgesagt';
-        case 'completed': return 'Erledigt';
+        case 'confirmed': return 'Confirmed';
+        case 'cancelled': return 'Cancelled';
+        case 'completed': return 'Completed';
         default: return status;
     }
 }

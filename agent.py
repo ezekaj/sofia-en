@@ -20,40 +20,40 @@ from src.dental.dental_tools import (
     answer_faq,
     get_insurance_info,
     get_payment_info,
-    get_naechste_freie_termine,
-    get_tagesplan_arzt,
-    get_wochenuebersicht_arzt,
-    termin_buchen_erweitert,
-    get_patientenhistorie,
-    termine_suchen_praxis,
-    meine_termine_finden,
-    medizinische_nachfragen_stellen,
-    intelligente_terminbuchung_mit_nachfragen,
-    namen_erkennen_und_speichern,
-    intelligente_antwort_mit_namen_erkennung,
-    gespraech_hoeflich_beenden,
-    erkennung_gespraechsende_wunsch,
-    intelligente_grund_nachfragen,
+    get_next_available_appointments,
+    get_doctor_daily_schedule,
+    get_doctor_weekly_overview,
+    book_appointment_extended,
+    get_patient_history,
+    search_practice_appointments,
+    find_my_appointments,
+    ask_medical_followup_questions,
+    smart_appointment_booking_with_followups,
+    recognize_and_save_name,
+    smart_response_with_name_recognition,
+    end_conversation_politely,
+    detect_conversation_end_wish,
+    smart_reason_followup,
     conversational_repair,
-    get_praxis_statistiken,
-    termin_absagen,
-    check_verfuegbarkeit_erweitert,
-    parse_terminwunsch,
-    get_aktuelle_datetime_info,
-    get_intelligente_terminvorschlaege,
-    termin_buchen_mit_details,
-    termin_direkt_buchen,
-    check_verfuegbarkeit_spezifisch,
-    gespraech_beenden,
-    notiz_hinzufuegen,
-    gespraech_status,
-    get_zeitabhaengige_begruessung,
-    sofia_naechster_freier_termin,
-    sofia_termin_an_bestimmtem_tag,
-    sofia_terminvorschlaege_intelligent,
-    sofia_heutige_termine_abrufen,
-    sofia_meine_termine_finden_erweitert,
-    termin_buchen_calendar_system,  # NEW: Calendar integration booking
+    get_practice_statistics,
+    cancel_appointment_by_id,
+    check_availability_extended,
+    parse_appointment_request,
+    get_current_datetime_info,
+    get_smart_appointment_suggestions,
+    book_appointment_with_details,
+    book_appointment_directly,
+    check_specific_availability,
+    end_conversation,
+    add_note,
+    conversation_status,
+    get_time_based_greeting,
+    sofia_next_available_appointment,
+    sofia_appointment_on_specific_day,
+    sofia_smart_appointment_suggestions,
+    sofia_get_todays_appointments,
+    sofia_find_my_appointments_extended,
+    book_appointment_calendar_system,  # NEW: Calendar integration booking
     call_manager  # Import the call manager
 )
 
@@ -69,8 +69,8 @@ class DentalReceptionist(Agent):
         super().__init__(
             instructions=AGENT_INSTRUCTION,
             llm=google.beta.realtime.RealtimeModel(
-                voice="Aoede",  # Female voice for German
-                language="de-DE",  # German language
+                voice="Sage",  # Female voice for English
+                language="en-US",  # English language
                 temperature=0.7,
             ),
             tools=[
@@ -84,69 +84,69 @@ class DentalReceptionist(Agent):
                 answer_faq,
                 get_insurance_info,
                 get_payment_info,
-                get_naechste_freie_termine,
-                get_tagesplan_arzt,
-                get_wochenuebersicht_arzt,
-                termin_buchen_erweitert,
-                get_patientenhistorie,
-                termine_suchen_praxis,
-                meine_termine_finden,
-                medizinische_nachfragen_stellen,
-                intelligente_terminbuchung_mit_nachfragen,
-                namen_erkennen_und_speichern,
-                intelligente_antwort_mit_namen_erkennung,
-                gespraech_hoeflich_beenden,
-                erkennung_gespraechsende_wunsch,
-                intelligente_grund_nachfragen,
+                get_next_available_appointments,
+                get_doctor_daily_schedule,
+                get_doctor_weekly_overview,
+                book_appointment_extended,
+                get_patient_history,
+                search_practice_appointments,
+                find_my_appointments,
+                ask_medical_followup_questions,
+                smart_appointment_booking_with_followups,
+                recognize_and_save_name,
+                smart_response_with_name_recognition,
+                end_conversation_politely,
+                detect_conversation_end_wish,
+                smart_reason_followup,
                 conversational_repair,
-                get_praxis_statistiken,
-                termin_absagen,
-                check_verfuegbarkeit_erweitert,
-                parse_terminwunsch,
-                get_aktuelle_datetime_info,
-                get_intelligente_terminvorschlaege,
-                termin_buchen_mit_details,
-                termin_direkt_buchen,
-                check_verfuegbarkeit_spezifisch,
-                gespraech_beenden,
-                notiz_hinzufuegen,
-                gespraech_status,
-                get_zeitabhaengige_begruessung,
-                sofia_naechster_freier_termin,
-                sofia_termin_an_bestimmtem_tag,
-                sofia_terminvorschlaege_intelligent,
-                sofia_heutige_termine_abrufen,
-                sofia_meine_termine_finden_erweitert,
-                termin_buchen_calendar_system  # NEW: Calendar integration booking
+                get_practice_statistics,
+                cancel_appointment_by_id,
+                check_availability_extended,
+                parse_appointment_request,
+                get_current_datetime_info,
+                get_smart_appointment_suggestions,
+                book_appointment_with_details,
+                book_appointment_directly,
+                check_specific_availability,
+                end_conversation,
+                add_note,
+                conversation_status,
+                get_time_based_greeting,
+                sofia_next_available_appointment,
+                sofia_appointment_on_specific_day,
+                sofia_smart_appointment_suggestions,
+                sofia_get_todays_appointments,
+                sofia_find_my_appointments_extended,
+                book_appointment_calendar_system  # NEW: Calendar integration booking
             ],
         )
         self.should_end_conversation = False
     
     async def handle_response(self, response: str) -> str:
         """
-        Verarbeitet die Antwort und prüft auf Gesprächsende-Signal
-        KRITISCH: Bei Ende-Signal SOFORT beenden!
+        Processes the response and checks for conversation end signal
+        CRITICAL: On end signal, end IMMEDIATELY!
         """
         # Prüfe auf Ende-Signal
         if "*[CALL_END_SIGNAL]*" in response:
             self.should_end_conversation = True
-            logging.info("🔴 Gesprächsende-Signal erkannt - Gespräch wird SOFORT beendet")
-            # Entferne das Signal aus der Antwort
+            logging.info("🔴 Conversation end signal detected - conversation ending IMMEDIATELY")
+            # Remove the signal from the response
             response = response.replace("*[CALL_END_SIGNAL]*", "")
             
-            # SOFORT beenden - keine weiteren Nachrichten!
-            logging.info("🚨 KRITISCH: Gespräch MUSS SOFORT beendet werden!")
+            # END IMMEDIATELY - no further messages!
+            logging.info("🚨 CRITICAL: Conversation MUST end IMMEDIATELY!")
             
         # Prüfe auch den CallManager-Status
         if call_manager.is_conversation_ended():
             self.should_end_conversation = True
-            logging.info("🔴 CallManager signalisiert Gesprächsende - SOFORT beenden")
+            logging.info("🔴 CallManager signals conversation end - ending IMMEDIATELY")
             
         return response
     
     def is_conversation_ended(self) -> bool:
         """
-        Prüft, ob das Gespräch beendet werden soll
+        Checks if the conversation should be ended
         """
         return self.should_end_conversation or call_manager.is_conversation_ended()
 
@@ -157,8 +157,8 @@ async def entrypoint(ctx: agents.JobContext):
     print("!" * 60)
     print(f"Room: {ctx.room.name}")
     print(f"Room participants: {len(ctx.room.remote_participants)}")
-    print("Starte deutsche Zahnarzt-Assistentin mit Audio-Input...")
-    logger.info("Starting German dental assistant agent")
+    print("Starting English dental assistant with audio input...")
+    logger.info("Starting English dental assistant agent")
     
     # Create the agent
     agent = DentalReceptionist()
@@ -181,17 +181,17 @@ async def entrypoint(ctx: agents.JobContext):
         asyncio.create_task(handle_track())
     
     async def on_track_published_async(publication: rtc.TrackPublication, participant: rtc.RemoteParticipant):
-        print(f"Audio-Track erkannt: {publication.track_info.name}")
+        print(f"Audio track detected: {publication.track_info.name}")
         logger.info(f"Audio track published: {publication.track_info.name}")
         
         if publication.track_info.kind == rtc.TrackKind.KIND_AUDIO:
-            print("Mikrofon-Input aktiv!")
+            print("Microphone input active!")
             logger.info("Microphone input active")
             
             # Subscribe to the audio track
             track = await publication.track()
             if track:
-                print("🎤 Höre zu...")
+                print("🎤 Listening...")
                 logger.info("Listening to audio track")
                 
                 # Start processing audio
@@ -205,7 +205,7 @@ async def entrypoint(ctx: agents.JobContext):
         asyncio.create_task(handle_participant())
     
     async def on_participant_connected_async(participant: rtc.RemoteParticipant):
-        print(f"Teilnehmer verbunden: {participant.identity}")
+        print(f"Participant connected: {participant.identity}")
         logger.info(f"Participant connected: {participant.identity}")
     
     ctx.room.on("participant_connected", on_participant_connected)
@@ -216,14 +216,14 @@ async def entrypoint(ctx: agents.JobContext):
         asyncio.create_task(handle_data())
     
     async def on_data_received_async(data: rtc.DataPacket):
-        print(f"Daten empfangen: {data.data}")
+        print(f"Data received: {data.data}")
         logger.info(f"Data received: {data.data}")
     
     ctx.room.on("data_received", on_data_received)
     
     # Connect to the room
     await ctx.connect()
-    print("Mit LiveKit-Raum verbunden")
+    print("Connected to LiveKit room")
     
     # Start the agent session
     await session.start(
@@ -232,33 +232,33 @@ async def entrypoint(ctx: agents.JobContext):
         room_input_options=room_input_options,
     )
     
-    print("🎯 Bereit zum Zuhören! Sprechen Sie jetzt...")
+    print("🎯 Ready to listen! Please speak now...")
     logger.info("Agent ready to listen")
     
     # Generate initial greeting with AUTOMATIC date/time detection
     await session.generate_reply(
-        instructions=SESSION_INSTRUCTION + "\n\n**WICHTIG**: Rufen Sie SOFORT `get_zeitabhaengige_begruessung()` für die automatische Begrüßung auf!",
+        instructions=SESSION_INSTRUCTION + "\n\n**IMPORTANT**: Call `get_time_based_greeting()` IMMEDIATELY for automatic greeting!",
     )
     
-    # KEIN automatisches Gesprächsende-Monitoring
-    # Sofia läuft kontinuierlich ohne Unterbrechungen
+    # NO automatic conversation end monitoring
+    # Sofia runs continuously without interruptions
     
-    # KEIN automatisches Monitoring - Sofia läuft kontinuierlich
+    # NO automatic monitoring - Sofia runs continuously
     
-    # Warte auf Shutdown - OHNE automatisches Beenden
+    # Wait for shutdown - WITHOUT automatic ending
     try:
-        # Endlos-Schleife - Agent läuft kontinuierlich
+        # Endless loop - Agent runs continuously
         while True:
             await asyncio.sleep(1)
     except KeyboardInterrupt:
-        logger.info("Agent manuell beendet")
+        logger.info("Agent manually terminated")
     except Exception as e:
-        logger.info(f"Agent Fehler: {e}")
-        # Bei Fehlern weiter laufen lassen
+        logger.info(f"Agent error: {e}")
+        # Keep running on errors
         await asyncio.sleep(5)
     finally:
-        # Cleanup nur bei echtem Shutdown
-        print("Agent beendet")
+        # Cleanup only on real shutdown
+        print("Agent terminated")
         logger.info("Agent shutdown")
 
 

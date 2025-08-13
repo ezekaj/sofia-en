@@ -79,19 +79,6 @@ services:
       - NODE_ENV=production
       - SOFIA_VOICE_ENABLED=true
 
-  # CRM Dashboard
-  crm-dashboard:
-    build:
-      context: ./crm
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    volumes:
-      - calendar-data:/app/data
-    networks:
-      - sofia-network
-    restart: unless-stopped
-
   # Sofia Web Interface
   sofia-web:
     build:

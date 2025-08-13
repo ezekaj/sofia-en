@@ -1,7 +1,7 @@
 {
   "name": "dental-calendar",
   "version": "1.0.0",
-  "description": "Simple working dental calendar CRM",
+  "description": "Simple working dental calendar",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
