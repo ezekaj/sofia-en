@@ -34,10 +34,23 @@
         "timestamp": "2025-08-15T19:17:58.580818"
       },
       "zeitstempel": "2025-08-15T19:17:58.580818"
+    },
+    {
+      "typ": "emergency",
+      "details": {
+        "symptoms": "severe tooth pain, dizziness, cannot eat",
+        "pain_scale": 10,
+        "severity_score": 10,
+        "detected_conditions": [],
+        "patient_age": 0,
+        "duration": "",
+        "timestamp": "2025-08-19T00:08:57.508050"
+      },
+      "zeitstempel": "2025-08-19T00:08:57.508050"
     }
   ],
   "muster": {
-    "emergency": 3
+    "emergency": 4
   },
   "optimierungen": {}
 }
