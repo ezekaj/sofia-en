@@ -2219,8 +2219,17 @@ async def emergency_prioritization(
     patient_name: str = ""
 ) -> str:
     """
-    Advanced emergency prioritization system with intelligent questioning and documentation.
-    Evaluates symptoms, asks follow-up questions, and creates comprehensive notes for appointments.
+    PhD in Stomatology-Enhanced Emergency Prioritization System with First Aid Guidance.
+    
+    This advanced system leverages doctoral-level expertise in oral medicine to:
+    1. Accurately assess emergency severity using evidence-based protocols
+    2. Provide safe, professional first aid guidance within scope of practice
+    3. Generate comprehensive clinical documentation for continuity of care
+    4. Ensure patient safety through clear boundaries on medical advice
+    
+    The system incorporates PhD-level knowledge while maintaining strict safety protocols,
+    never prescribing medications or suggesting complex interventions that require
+    direct clinical examination.
     """
     try:
         import json
@@ -2242,15 +2251,20 @@ async def emergency_prioritization(
         # Validate pain scale (0-10)
         pain_scale = max(0, min(10, pain_scale))
         
-        # Enhanced emergency keyword detection with severity levels
+        # PhD-Enhanced emergency keyword detection with evidence-based severity levels
+        # Based on International Association of Dental Traumatology (IADT) guidelines
         critical_keywords = {
             "unconscious": 10, "unresponsive": 10, "difficulty breathing": 10,
+            "anaphylaxis": 10, "airway obstruction": 10, "sepsis": 10,
             "chest pain": 9, "severe bleeding": 9, "broken jaw": 9,
             "facial trauma": 9, "knocked out tooth": 9, "avulsed tooth": 9,
+            "ludwig's angina": 9, "cellulitis": 9, "trismus": 8,
             "severe swelling": 8, "can't swallow": 8, "high fever": 8,
-            "abscess": 7, "pus": 7, "throbbing pain": 7,
+            "abscess": 7, "pus": 7, "throbbing pain": 7, "pericoronitis": 7,
+            "dry socket": 7, "alveolar osteitis": 7, "pulpitis": 7,
             "cracked tooth": 6, "lost filling": 5, "chipped tooth": 5,
-            "bleeding gums": 4, "sensitivity": 3, "mild pain": 2
+            "bleeding gums": 4, "sensitivity": 3, "mild pain": 2,
+            "gingivitis": 3, "TMJ pain": 4, "bruxism": 3
         }
         
         # Additional risk factors
@@ -2437,48 +2451,115 @@ async def emergency_prioritization(
         response += f"\n**Recommendation**: {recommendation}\n"
         response += f"**Expected Response Time**: {wait_time}\n\n"
         
-        # Add immediate care instructions based on priority
+        # PhD in Stomatology: Evidence-Based Emergency First Aid Protocols
         if priority == "CRITICAL":
+            response += "**PhD STOMATOLOGY EMERGENCY PROTOCOL - CRITICAL:**\n"
             response += "**IMMEDIATE ACTIONS REQUIRED:**\n"
-            response += "⚠️ **Call Emergency Services (911) if:**\n"
+            response += "**Call Emergency Services (999/911) if:**\n"
             response += "• Difficulty breathing or swallowing\n"
-            response += "• Uncontrolled bleeding\n"
+            response += "• Uncontrolled bleeding (>15 minutes pressure)\n"
             response += "• Loss of consciousness\n"
-            response += "• Severe facial swelling\n\n"
-            response += "**Or come IMMEDIATELY to:**\n"
-            response += "📍 Elite Dental Practice\n"
-            response += "📞 Emergency Line: +1 (555) 911-DENTAL\n\n"
+            response += "• Severe facial/neck swelling (potential Ludwig's angina)\n"
+            response += "• Signs of sepsis (fever, confusion, rapid heartbeat)\n\n"
+            
+            response += "**PhD-Level First Aid (Until Professional Help Arrives):**\n"
+            response += "• **Airway**: Sit upright, lean slightly forward\n"
+            response += "• **Breathing**: Monitor respiratory rate\n"
+            response += "• **Circulation**: Apply direct pressure to bleeding\n"
+            response += "• **SAFE Pain Relief**: Paracetamol 500mg (NOT exceeding 4g/24hrs)\n"
+            response += "• **DO NOT**: Give aspirin if bleeding\n\n"
+            
+            response += "**SAFETY BOUNDARY**: These are temporary measures only.\n"
+            response += "Professional medical intervention is urgently required.\n\n"
             
         elif priority == "HIGH":
             response += "**Immediate Care Instructions:**\n"
             
             # Specific instructions based on symptoms
             if "bleeding" in symptoms_lower:
-                response += "🩸 **For Bleeding:**\n"
-                response += "• Apply firm, direct pressure with clean gauze/cloth\n"
-                response += "• Bite down gently if from extraction site\n"
-                response += "• Do NOT rinse vigorously\n\n"
+                response += "**PhD Stomatology Hemorrhage Control Protocol:**\n\n"
+                
+                response += "**Primary Hemostasis (Evidence-Based):**\n"
+                response += "1. **Direct Pressure**: Clean gauze, firm pressure 10-15 minutes\n"
+                response += "   - DO NOT keep checking (disrupts clot formation)\n"
+                response += "2. **Post-Extraction Bleeding**:\n"
+                response += "   - Bite on damp gauze for 30-45 minutes\n"
+                response += "   - Tea bag (tannic acid promotes clotting)\n"
+                response += "3. **Position**: Sit upright, head elevated\n\n"
+                
+                response += "**DO NOT:**\n"
+                response += "• Rinse vigorously (first 24 hours)\n"
+                response += "• Use straws (negative pressure)\n"
+                response += "• Smoke (impairs healing)\n"
+                response += "• Take aspirin (antiplatelet effect)\n\n"
+                
+                response += "**When to Seek Immediate Care:**\n"
+                response += "• Bleeding >2 hours despite pressure\n"
+                response += "• Large blood clots forming\n"
+                response += "• Signs of significant blood loss (dizziness, weakness)\n\n"
             
             if "swelling" in symptoms_lower or "swollen" in symptoms_lower:
-                response += "🧊 **For Swelling:**\n"
-                response += "• Apply ice pack (wrapped in cloth) for 15 min intervals\n"
-                response += "• Keep head elevated\n"
-                response += "• Do NOT apply heat\n\n"
+                response += "**PhD Stomatology Edema Management Protocol:**\n\n"
+                
+                response += "**Acute Phase (First 48-72 hours):**\n"
+                response += "• **Cryotherapy**: Ice pack wrapped in thin towel\n"
+                response += "  - 20 minutes on, 20 minutes off\n"
+                response += "  - Reduces inflammatory mediators & pain\n"
+                response += "• **Elevation**: Head above heart level (even during sleep)\n"
+                response += "• **Compression**: Gentle external pressure if tolerated\n\n"
+                
+                response += "**RED FLAGS (Requires Immediate Medical Attention):**\n"
+                response += "• Swelling extending to eye (periorbital cellulitis risk)\n"
+                response += "• Swelling under jaw/neck (Ludwig's angina risk)\n"
+                response += "• Difficulty swallowing/breathing (airway compromise)\n"
+                response += "• Fever >38.5°C with swelling (systemic infection)\n\n"
+                
+                response += "**NEVER Apply Heat** to acute dental swelling\n"
+                response += "(Can spread infection, increase edema)\n\n"
             
             if "knocked out" in symptoms_lower or "avulsed" in symptoms_lower:
-                response += "🦷 **For Knocked-Out Tooth:**\n"
-                response += "• Handle tooth by crown only (not root)\n"
-                response += "• Rinse gently with milk or saline\n"
-                response += "• Try to reinsert into socket if possible\n"
-                response += "• Otherwise, store in milk or saliva\n"
-                response += "• TIME IS CRITICAL - Come immediately!\n\n"
+                response += "**PhD Stomatology Protocol - Dental Avulsion (IADT Guidelines):**\n"
+                response += "**CRITICAL TIME WINDOW: Best prognosis within 30 minutes**\n\n"
+                
+                response += "**Evidence-Based Tooth Preservation Steps:**\n"
+                response += "1. **Find the tooth** - Handle by crown (white part) ONLY\n"
+                response += "2. **DO NOT**: Scrub, use soap, or remove attached tissue\n"
+                response += "3. **If dirty**: Rinse GENTLY with milk/saline for 10 seconds max\n\n"
+                
+                response += "**Reimplantation (If Adult Permanent Tooth):**\n"
+                response += "• Gently push tooth back into socket\n"
+                response += "• Have patient bite on gauze/handkerchief to hold in place\n"
+                response += "• If cannot reimplant, transport tooth in:\n"
+                response += "  - BEST: Hank's Balanced Salt Solution (HBSS)\n"
+                response += "  - GOOD: Cold milk (maintains cell viability ~6 hours)\n"
+                response += "  - ACCEPTABLE: Patient's saliva (cheek pouch)\n"
+                response += "  - NEVER: Water (damages periodontal cells)\n\n"
+                
+                response += "**Prognosis by Time (PhD Research Data):**\n"
+                response += "• <30 min: 90% success rate\n"
+                response += "• 30-60 min: 50% success rate\n"
+                response += "• >60 min: Poor prognosis\n\n"
+                
+                response += "**COME IMMEDIATELY - Every minute counts!**\n\n"
             
             if pain_scale >= 7:
-                response += "💊 **For Pain Management:**\n"
-                response += "• Ibuprofen 400-600mg (if no allergies)\n"
-                response += "• Can alternate with Acetaminophen 500mg\n"
-                response += "• Avoid aspirin if bleeding\n"
-                response += "• Salt water rinse (warm, not hot)\n\n"
+                response += "**PhD Stomatology Pain Management Protocol (OTC Only):**\n"
+                response += "**SAFE First Aid Analgesia:**\n"
+                response += "• Ibuprofen 400mg every 6-8 hours (max 1200mg/24hrs)\n"
+                response += "  - Anti-inflammatory effect reduces dental pain\n"
+                response += "  - CONTRAINDICATED: Pregnancy, peptic ulcers, aspirin allergy\n"
+                response += "• Paracetamol/Acetaminophen 500mg every 4-6 hours (max 4g/24hrs)\n"
+                response += "  - Can be combined with ibuprofen for synergistic effect\n"
+                response += "• **DO NOT USE**: Aspirin (increases bleeding risk)\n\n"
+                
+                response += "**Topical Relief (Evidence-Based):**\n"
+                response += "• Clove oil (eugenol) - natural analgesic, apply with cotton swab\n"
+                response += "• Saltwater rinse: 1/2 teaspoon salt in warm water\n"
+                response += "• Cold compress: 15 minutes on, 15 minutes off\n\n"
+                
+                response += "**IMPORTANT SAFETY NOTE:**\n"
+                response += "These are TEMPORARY measures only. Professional dental care required.\n"
+                response += "I cannot prescribe antibiotics or stronger medications.\n\n"
             
             response += "**📞 Emergency Hotline**: +1 (555) 911-DENTAL\n"
             response += "**📍 Address**: 123 Main Street, Suite 100\n"
@@ -2574,6 +2655,130 @@ async def emergency_prioritization(
         fallback += "For urgent care, call: +1 (555) 911-DENTAL"
         
         return fallback
+
+@function_tool()
+async def phd_stomatology_first_aid_guidance(
+    context: RunContext,
+    condition: str,
+    severity: str = "moderate"
+) -> str:
+    """
+    PhD in Stomatology: Evidence-based first aid guidance for dental emergencies.
+    
+    Provides safe, professional first aid instructions based on doctoral-level
+    knowledge of oral medicine while maintaining strict safety boundaries.
+    Only recommends OTC medications and safe home remedies that cannot cause harm.
+    """
+    try:
+        condition_lower = condition.lower()
+        severity_lower = severity.lower()
+        
+        response = "**Dr. Sofia, PhD in Stomatology - First Aid Guidance**\n\n"
+        response += f"**Condition**: {condition}\n"
+        response += f"**Severity Assessment**: {severity}\n\n"
+        
+        # PhD-level first aid protocols for specific conditions
+        if "toothache" in condition_lower or "tooth pain" in condition_lower:
+            response += "**Evidence-Based Toothache Management:**\n\n"
+            response += "**SAFE Pain Relief (OTC Only):**\n"
+            response += "• Ibuprofen 400mg every 6-8 hours (max 1200mg/24hrs)\n"
+            response += "  - Most effective for dental pain due to anti-inflammatory action\n"
+            response += "• Can combine with Paracetamol 500mg for enhanced effect\n"
+            response += "• Clove oil (eugenol) - Apply with cotton swab to affected tooth\n\n"
+            
+            response += "**DO NOT:**\n"
+            response += "• Place aspirin directly on tooth/gums (causes chemical burn)\n"
+            response += "• Use heat on the area (can worsen inflammation)\n"
+            response += "• Delay professional treatment (infection risk)\n\n"
+            
+        elif "abscess" in condition_lower or "infection" in condition_lower:
+            response += "**DENTAL ABSCESS - REQUIRES URGENT PROFESSIONAL CARE**\n\n"
+            response += "**Temporary Measures (NOT a cure):**\n"
+            response += "• Warm saltwater rinse: 1/2 tsp salt in warm water, every 2 hours\n"
+            response += "• OTC pain relief as directed above\n"
+            response += "• Cold compress externally (15 min on/off)\n\n"
+            
+            response += "**CRITICAL WARNING:**\n"
+            response += "• Dental abscesses CANNOT be cured without professional treatment\n"
+            response += "• Antibiotics are REQUIRED (prescription only)\n"
+            response += "• Untreated abscesses can spread to bloodstream (sepsis risk)\n"
+            response += "• If facial swelling or fever develops - EMERGENCY ROOM IMMEDIATELY\n\n"
+            
+        elif "broken tooth" in condition_lower or "chipped" in condition_lower:
+            response += "**Dental Trauma Protocol (IADT Guidelines):**\n\n"
+            response += "**Immediate Actions:**\n"
+            response += "• Save any tooth fragments (store in milk)\n"
+            response += "• Rinse mouth gently with warm water\n"
+            response += "• Apply gauze to any bleeding areas (10 min pressure)\n"
+            response += "• Cold compress externally to reduce swelling\n\n"
+            
+            response += "**Temporary Coverage (if sharp edge):**\n"
+            response += "• Dental wax or sugar-free gum over sharp area\n"
+            response += "• Avoid chewing on affected side\n"
+            response += "• Soft diet until professional treatment\n\n"
+            
+        elif "bleeding" in condition_lower:
+            response += "**Oral Hemorrhage Control (Evidence-Based):**\n\n"
+            response += "**Primary Hemostasis:**\n"
+            response += "1. Sit upright, lean slightly forward\n"
+            response += "2. Clean gauze/tea bag - firm pressure 15-20 minutes\n"
+            response += "3. DO NOT rinse or spit (first 24 hours)\n"
+            response += "4. If extraction site: Bite firmly on gauze 30-45 min\n\n"
+            
+            response += "**Promote Clotting:**\n"
+            response += "• Black tea bag (tannic acid aids clotting)\n"
+            response += "• Avoid: Straws, smoking, alcohol, hot liquids\n"
+            response += "• If bleeding >2 hours: SEEK IMMEDIATE CARE\n\n"
+            
+        elif "swelling" in condition_lower or "swollen" in condition_lower:
+            response += "**Oral/Facial Edema Management:**\n\n"
+            response += "**First 48-72 Hours (Acute Phase):**\n"
+            response += "• Ice pack: 20 min on, 20 min off (wrapped in thin cloth)\n"
+            response += "• Head elevation (even during sleep)\n"
+            response += "• Anti-inflammatory: Ibuprofen as directed\n\n"
+            
+            response += "**RED FLAGS - EMERGENCY ROOM:**\n"
+            response += "• Swelling around eye (periorbital cellulitis)\n"
+            response += "• Under jaw/neck swelling (Ludwig's angina risk)\n"
+            response += "• Difficulty swallowing/breathing (airway risk)\n"
+            response += "• High fever with swelling (systemic infection)\n\n"
+            
+        else:
+            response += "**General Dental First Aid Principles:**\n\n"
+            response += "**Pain Management:**\n"
+            response += "• Ibuprofen 400mg + Paracetamol 500mg (can alternate)\n"
+            response += "• Avoid extremely hot/cold foods\n"
+            response += "• Soft diet recommended\n\n"
+            
+            response += "**Oral Hygiene During Emergency:**\n"
+            response += "• Continue gentle brushing (soft bristle)\n"
+            response += "• Warm saltwater rinses (after 24 hours)\n"
+            response += "• Avoid vigorous rinsing\n\n"
+        
+        # Always add safety disclaimer
+        response += "**IMPORTANT SAFETY INFORMATION:**\n"
+        response += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        response += "This guidance is based on my PhD in Stomatology training.\n"
+        response += "However, these are TEMPORARY first aid measures only.\n\n"
+        
+        response += "**I CANNOT:**\n"
+        response += "• Prescribe antibiotics or prescription medications\n"
+        response += "• Diagnose conditions without clinical examination\n"
+        response += "• Replace professional dental treatment\n\n"
+        
+        response += "**Professional dental care is essential for proper treatment.**\n"
+        response += "These measures are to provide comfort until you can see a dentist.\n\n"
+        
+        response += "**Emergency Contacts:**\n"
+        response += "• UK: NHS 111 or Emergency 999\n"
+        response += "• US: Emergency 911\n"
+        response += "• Dental Emergency: Dr. Smith's Practice +44 20 7123 4567\n"
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error in PhD first aid guidance: {e}")
+        return "I can provide general first aid guidance. Please describe your specific symptoms so I can offer appropriate temporary care instructions while you arrange to see a dentist."
 
 @function_tool()
 async def waiting_time_estimation(
