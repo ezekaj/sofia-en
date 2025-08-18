@@ -1422,32 +1422,37 @@ async def check_specific_availability(
 @function_tool()
 async def end_conversation(
     context: RunContext,
-    grund: str = "Verabschiedung"
+    grund: str = "Patient farewell"
 ) -> str:
     """
-    Beendet das Gespräch SOFORT und höflich nach einer Verabschiedung.
-    KRITISCH: Diese Funktion beendet das Gespräch SOFORT - keine weiteren Nachrichten!
+    Ends the conversation politely after a farewell.
+    CRITICAL: This function ends the conversation IMMEDIATELY - no further messages!
     """
     try:
-        # Gespräch SOFORT beenden
+        # Check if already ending to prevent multiple goodbyes
+        if call_manager.status == CallStatus.COMPLETED:
+            logging.info("Conversation already ended, skipping duplicate goodbye")
+            return "*[CALL_END_SIGNAL]*"  # Just send end signal, no duplicate message
+        
+        # End conversation IMMEDIATELY
         call_manager.initiate_call_end()
         call_manager.status = CallStatus.COMPLETED
-        call_manager.add_note(f"Gespräch beendet: {grund}")
+        call_manager.add_note(f"Conversation ended: {grund}")
         
-        # Höfliche Verabschiedung
-        response = "Thank you very much für Ihren Anruf! "
+        # Polite farewell (ONLY ONCE)
+        response = "Thank you for calling Dr. Smith's Dental Practice! "
         
-        # Falls ein appointment gebucht wurde, kurze Bestätigung
+        # If appointment was booked, brief confirmation
         if call_manager.scheduled_appointment:
             apt = call_manager.scheduled_appointment
-            response += f"Wir freuen uns auf Sie am {apt['date']} um {apt['time']}. "
+            response += f"We look forward to seeing you on {apt['date']} at {apt['time']}. "
             
-        response += "Einen schönen Tag noch und Goodbye!"
+        response += "Have a wonderful day and goodbye!"
         
-        # Log für Debugging
-        logging.info(f"🔴 GESPRÄCH BEENDET: {grund}")
+        # Log for debugging
+        logging.info(f"🔴 CONVERSATION ENDED: {grund}")
         
-        # Ende-Signal für das System
+        # End signal for system
         response += "\n*[CALL_END_SIGNAL]*"
         
         return response
@@ -2330,13 +2335,13 @@ async def emergency_prioritization(
         
         if severity_score >= 9:
             priority = "CRITICAL"
-            recommendation = "Immediate emergency care required"
-            wait_time = "IMMEDIATE - Call 911 if life-threatening"
+            recommendation = "Immediate emergency care required after first aid"
+            wait_time = "IMMEDIATE - Apply first aid then come in"
             response_code = "RED"
         elif severity_score >= 7:
             priority = "HIGH"
-            recommendation = "Urgent dental emergency - come immediately"
-            wait_time = "Within 30 minutes"
+            recommendation = "Urgent dental emergency - apply first aid then come immediately"
+            wait_time = "Within 30 minutes after first aid"
             response_code = "ORANGE"
         elif severity_score >= 5:
             priority = "MODERATE"
@@ -2427,10 +2432,62 @@ async def emergency_prioritization(
         # Store clinical notes
         conversation_summary["clinical_notes"] = clinical_notes
         
-        # Build comprehensive response
-        response = f"**Emergency Assessment:**\n\n"
+        # Build comprehensive response - FIRST AID COMES FIRST
+        response = f"**Dr. Sofia, PhD in Stomatology - Emergency Assessment:**\n\n"
+        response += f"I understand you're in distress. Let me help you immediately.\n\n"
+        
+        # IMMEDIATE FIRST AID - BEFORE ANYTHING ELSE
+        response += "**STEP 1: IMMEDIATE FIRST AID (Do this NOW):**\n"
+        response += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        # Provide specific first aid based on detected conditions
+        first_aid_given = False
+        
+        if "bleeding" in symptoms_lower:
+            response += "**For Your Bleeding:**\n"
+            response += "• Take clean gauze or a clean cloth\n"
+            response += "• Apply firm, continuous pressure for 15 minutes\n"
+            response += "• DO NOT keep checking - this disrupts clotting\n"
+            response += "• If from extraction site: Bite firmly on gauze\n\n"
+            first_aid_given = True
+            
+        if pain_scale >= 7 or "pain" in symptoms_lower or "ache" in symptoms_lower:
+            response += "**For Your Pain (Safe OTC Relief):**\n"
+            response += "• Take Ibuprofen 400mg NOW (if not allergic)\n"
+            response += "• You can also take Paracetamol 500mg\n"
+            response += "• Apply cold compress to outside of face\n"
+            response += "• Clove oil on affected tooth (if available)\n\n"
+            first_aid_given = True
+            
+        if "swelling" in symptoms_lower or "swollen" in symptoms_lower:
+            response += "**For Your Swelling:**\n"
+            response += "• Apply ice pack wrapped in thin towel\n"
+            response += "• 20 minutes on, 20 minutes off\n"
+            response += "• Keep your head elevated\n"
+            response += "• DO NOT apply heat\n\n"
+            first_aid_given = True
+            
+        if "knocked out" in symptoms_lower or "avulsed" in symptoms_lower:
+            response += "**FOR YOUR KNOCKED-OUT TOOTH (TIME CRITICAL!):**\n"
+            response += "• Pick up tooth by the crown (white part) ONLY\n"
+            response += "• Rinse GENTLY with milk (NOT water)\n"
+            response += "• Try to place it back in socket if possible\n"
+            response += "• If not, store in milk or your saliva\n"
+            response += "• COME IMMEDIATELY - Every minute matters!\n\n"
+            first_aid_given = True
+            
+        if not first_aid_given:
+            # General first aid if no specific condition detected
+            response += "**General First Aid:**\n"
+            response += "• Rinse with warm salt water (1/2 tsp in cup)\n"
+            response += "• Take OTC pain relief as directed above\n"
+            response += "• Apply cold compress if swelling\n"
+            response += "• Avoid hot/cold foods and drinks\n\n"
+        
+        # Now assessment details
+        response += "\n**STEP 2: YOUR ASSESSMENT:**\n"
+        response += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         response += f"**Priority Level**: {priority} ({response_code})\n"
-        response += f"**Symptoms Reported**: {symptoms}\n"
         
         if pain_scale > 0:
             response += f"**Pain Level**: {pain_scale}/10"
@@ -2442,14 +2499,14 @@ async def emergency_prioritization(
                 response += " (Mild)"
             response += "\n"
         
-        if duration:
-            response += f"**Duration**: {duration}\n"
-        
         if detected_conditions:
             response += f"**Detected Conditions**: {', '.join(detected_conditions)}\n"
         
-        response += f"\n**Recommendation**: {recommendation}\n"
-        response += f"**Expected Response Time**: {wait_time}\n\n"
+        response += f"**Clinical Priority**: {recommendation}\n\n"
+        
+        # Now appointment booking
+        response += "**STEP 3: EMERGENCY APPOINTMENT:**\n"
+        response += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         
         # PhD in Stomatology: Evidence-Based Emergency First Aid Protocols
         if priority == "CRITICAL":
@@ -3391,9 +3448,9 @@ class KalenderClient:
     """Client for direct calendar access with retry logic"""
     
     def __init__(self, calendar_url: str = None):
-        # Try environment variable first, then use correct default port 4000
+        # Try environment variable first, then use correct default port 3005
         import os
-        self.calendar_url = calendar_url or os.getenv('CALENDAR_URL', 'http://localhost:4000')
+        self.calendar_url = calendar_url or os.getenv('CALENDAR_URL', 'http://localhost:3005')
         self.client = httpx.AsyncClient(timeout=5.0)  # Shorter timeout
         self.max_retries = 2
     

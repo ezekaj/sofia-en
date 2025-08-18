@@ -55,6 +55,7 @@ from src.dental.dental_tools import (
     sofia_find_my_appointments_extended,
     book_appointment_calendar_system,  # NEW: Calendar integration booking
     emergency_prioritization,  # Emergency handling
+    phd_stomatology_first_aid_guidance,  # PhD first aid guidance
     call_manager  # Import the call manager
 )
 
@@ -119,7 +120,8 @@ class DentalReceptionist(Agent):
                 sofia_get_todays_appointments,
                 sofia_find_my_appointments_extended,
                 book_appointment_calendar_system,  # NEW: Calendar integration booking
-                emergency_prioritization  # Emergency handling with pain scale
+                emergency_prioritization,  # Emergency handling with pain scale
+                phd_stomatology_first_aid_guidance  # PhD first aid guidance
             ],
         )
         self.should_end_conversation = False
