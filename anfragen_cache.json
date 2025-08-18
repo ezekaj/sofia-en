@@ -1,0 +1,43 @@
+{
+  "anfragen": [
+    {
+      "typ": "emergency",
+      "details": {
+        "symptome": "dhimbje dhëmbi",
+        "schmerzskala": 7,
+        "keywords": []
+      },
+      "zeitstempel": "2025-08-13T18:15:54.621755"
+    },
+    {
+      "typ": "emergency",
+      "details": {
+        "symptoms": "wisdom tooth pain",
+        "pain_scale": 7,
+        "severity_score": 7,
+        "detected_conditions": [],
+        "patient_age": 0,
+        "duration": "",
+        "timestamp": "2025-08-14T10:51:28.686498"
+      },
+      "zeitstempel": "2025-08-14T10:51:28.686498"
+    },
+    {
+      "typ": "emergency",
+      "details": {
+        "symptoms": "wisdom teeth pain",
+        "pain_scale": 10,
+        "severity_score": 10,
+        "detected_conditions": [],
+        "patient_age": 0,
+        "duration": "",
+        "timestamp": "2025-08-15T19:17:58.580818"
+      },
+      "zeitstempel": "2025-08-15T19:17:58.580818"
+    }
+  ],
+  "muster": {
+    "emergency": 3
+  },
+  "optimierungen": {}
+}

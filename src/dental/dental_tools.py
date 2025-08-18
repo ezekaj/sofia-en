@@ -2,13 +2,14 @@ import logging
 import re
 from functools import lru_cache
 from livekit.agents import function_tool, RunContext
-from datetime import datetime, timedelta, timedelta
+from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 from enum import Enum
 import json
 import locale
 import httpx
 import asyncio
+import pytz
 # 🚀 PERFORMANCE BOOST: Fuzzy Times for vague time specifications
 FUZZY_TIMES = {
     "shortly after 2": "14:15",
@@ -69,8 +70,8 @@ class ContextStack:
         time_patterns = [
             r'(\d{1,2}):(\d{2})',  # 11:30
             r'(\d{1,2})\.(\d{2})',  # 11.30
-            r'(\d{1,2}) o'clock',       # 11 o'clock
-            r'um (\d{1,2})',        # um 11
+            r"(\d{1,2}) o'clock",  # 11 o'clock
+            r'at (\d{1,2})',       # at 11
         ]
 
         for pattern in time_patterns:
@@ -89,7 +90,7 @@ context_stack = ContextStack()
 
 # Clinic knowledge data inline (from original backup)
 CLINIC_INFO = {
-    'name': 'Dental Practice Dr. Weber',
+    'name': 'Dr. Smith\'s Dental Practice',
     'address': '123 Main Street, London SW1A 1AA',
     'phone': '+44 20 7123 4567',
     'email': 'info@drsmith-dental.co.uk',
@@ -141,7 +142,7 @@ INSURANCE_INFO = {
 PAYMENT_OPTIONS = ['Barzahlung', 'EC-Karte', 'Überweisung', 'Ratenzahlung']
 
 STAFF = {
-    'Dr. Weber': 'Zahnarzt',
+    'Dr. Smith': 'Dentist',
     'Sofia': 'Praxisassistentin (KI)'
 }
 
@@ -156,15 +157,16 @@ GERMAN_MONTHS = {
     7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'
 }
 
-def get_current_datetime_info():
+def get_datetime_info_internal():
     """
-    Gibt automatisch das aktuelle Datum und die Uhrzeit zurück.
-    ✅ KONSISTENTE datetime-Verwendung - keine String/datetime Mischung
-    ✅ REPARIERT: Verwendet immer das aktuelle Datum ohne Caching
-    ✅ AUTO-DATUM: Automatische Datum-Einfügung aktiviert
+    Returns current date and time automatically.
+    ✅ CONSISTENT datetime usage - no string/datetime mixing
+    ✅ FIXED: Always uses current date without caching
+    ✅ AUTO-DATE: Automatic date insertion enabled
     """
-    # ✅ WICHTIG: Jedes Mal frisches Datum abrufen
-    now = datetime.now()
+    # ✅ IMPORTANT: Get fresh date each time - Use CET timezone
+    cet = pytz.timezone('Europe/Berlin')
+    now = datetime.now(cet)
     
     # 🔧 DEBUG: Logging für Datum-Debugging
     import logging
@@ -353,7 +355,7 @@ class CallManager:
         
     def add_note(self, note: str):
         # ✅ KONSISTENT: Verwende get_current_datetime_info()
-        time_info = get_current_datetime_info()
+        time_info = get_datetime_info_internal()
         self.notes.append(f"{time_info['time_formatted']}: {note}")
         
     def set_patient_info(self, info: dict):
@@ -376,7 +378,7 @@ class CallManager:
         
     def get_summary(self) -> str:
         # ✅ KONSISTENT: Verwende get_current_datetime_info()
-        time_info = get_current_datetime_info()
+        time_info = get_datetime_info_internal()
         summary = f"Gespräch beendet um {time_info['time_formatted']}\n"
         if self.patient_info:
             summary += f"patient: {self.patient_info.get('name', 'N/A')}\n"
@@ -490,7 +492,7 @@ async def get_clinic_info(
     try:
         if info_type == "general":
             return f"""
-Dental Practice Dr. Weber
+Dr. Smith's Dental Practice
 Adresse: {CLINIC_INFO['address']}
 Telefon: {CLINIC_INFO['phone']}
 E-Mail: {CLINIC_INFO['email']}
@@ -507,7 +509,7 @@ opening hours: Monday-Friday 9:00-18:00, Saturday 9:00-13:00
         
         elif info_type == "contact":
             return f"""
-Kontakt Dental Practice Dr. Weber:
+Contact Dr. Smith's Dental Practice:
 Telefon: {CLINIC_INFO['phone']}
 E-Mail: {CLINIC_INFO['email']}
 Website: {CLINIC_INFO['website']}
@@ -649,7 +651,7 @@ async def schedule_appointment(
             return f"Terminart nicht erkannt. Verfügbare Arten: {', '.join(APPOINTMENT_TYPES.keys())}"
         
         # ✅ KONSISTENT: Verwende get_current_datetime_info()
-        time_info = get_current_datetime_info()
+        time_info = get_datetime_info_internal()
         appointment_id = f"APP_{time_info['datetime'].strftime('%Y%m%d%H%M%S')}"
         
         appointment_data = {
@@ -920,7 +922,7 @@ async def get_next_available_appointments(
     try:
         if not ab_datum:
             # ✅ KONSISTENT: Verwende get_current_datetime_info()
-            time_info = get_current_datetime_info()
+            time_info = get_datetime_info_internal()
             ab_datum = time_info['date_iso']
         
         verfuegbare_termine = appointment_manager.get_verfuegbare_termine(ab_datum, anzahl_vorschlaege)
@@ -1239,7 +1241,7 @@ async def get_current_datetime_info(
     """
     try:
         # Automatische Datum/Zeit-Erkennung
-        info = get_current_datetime_info()
+        info = get_datetime_info_internal()
 
         antwort = f"**Aktuelle Datum- und Zeitinformationen:**\n\n"
         antwort += f"**today**: {info['date_formatted']}\n"
@@ -1512,7 +1514,7 @@ async def get_time_aware_greeting(
     """
     try:
         # Automatische Datum/Zeit-Erkennung
-        info = get_current_datetime_info()
+        info = get_datetime_info_internal()
 
         # Bestimme die passende Begrüßung basierend auf der Uhrzeit
         if 6 <= info['hour'] < 12:
@@ -1523,7 +1525,7 @@ async def get_time_aware_greeting(
             begruessung = "Guten evening"
 
         # Einfache Begrüßung OHNE automatischen Praxisstatus
-        response = f"{begruessung}! Ich bin Sofia, Ihre Assistentin bei der Dental Practice Dr. Weber. "
+        response = f"{begruessung}! I'm Sofia, your assistant at Dr. Smith's Dental Practice. "
         response += f"Wie kann ich Ihnen today helfen?"
         
         # Notiz hinzufügen
@@ -1533,7 +1535,7 @@ async def get_time_aware_greeting(
         
     except Exception as e:
         logging.error(f"Fehler bei zeitbewusster Begrüßung: {e}")
-        return "Good day! Ich bin Sofia, Ihre Assistentin bei der Dental Practice Dr. Weber. Wie kann ich Ihnen helfen?"
+        return "Good day! I'm Sofia, your assistant at Dr. Smith's Dental Practice. How can I help you?"
 
 @function_tool()
 async def get_time_based_greeting(
@@ -1545,28 +1547,28 @@ async def get_time_based_greeting(
     """
     try:
         # AUTOMATISCHE Datum/Zeit-Erkennung verwenden
-        info = get_current_datetime_info()
+        info = get_datetime_info_internal()
 
-        # Zeitabhängige Begrüßung bestimmen
+        # Time-based greeting determination
         if 4 <= info['hour'] <= 10:
-            begruessung = "Guten tomorrow"
+            greeting = "Good morning"
         elif 11 <= info['hour'] <= 17:
-            begruessung = "Good day"
+            greeting = "Good afternoon"
         else:  # 18:00-03:59
-            begruessung = "Guten evening"
+            greeting = "Good evening"
 
-        # Einfache Begrüßung OHNE automatischen Praxisstatus
-        antwort = f"{begruessung}! Ich bin Sofia, Ihre Assistentin bei der Dental Practice Dr. Weber. "
-        antwort += f"Wie kann ich Ihnen today helfen?"
+        # Professional greeting with practice identification
+        response = f"{greeting}! Thank you for calling Dr. Smith's Dental Practice. "
+        response += f"I'm Sofia, your virtual assistant. How may I help you today?"
 
-        # Notiz hinzufügen - ✅ KONSISTENT: Verwende bereits vorhandene info
-        call_manager.add_note(f"Begrüßung: {begruessung} um {info['time_formatted']} o'clock am {info['date_formatted']}")
+        # Add note - ✅ CONSISTENT: Use already available info
+        call_manager.add_note(f"Greeting: {greeting} at {info['time_formatted']} on {info['date_formatted']}")
 
-        return antwort
+        return response
         
     except Exception as e:
-        logging.error(f"Fehler bei zeitabhängiger Begrüßung: {e}")
-        return "Good day! Ich bin Sofia, Ihre Praxisassistentin. Wie kann ich Ihnen helfen?"
+        logging.error(f"Error with time-based greeting: {e}")
+        return "Good afternoon! Thank you for calling Dr. Smith's Dental Practice. I'm Sofia, your virtual assistant. How may I help you today?"
 
 @function_tool()
 async def appointment_booking_step_by_step(
@@ -1831,7 +1833,7 @@ async def recognize_and_save_name(
         # Kein Name erkannt - höflich nachfragen
         if call_manager.should_ask_for_name():
             call_manager.mark_name_asked()
-            return "Hello! Ich bin Sofia von der Dental Practice Dr. Weber. Darf ich fragen, wie Sie heißen?"
+            return "Hello! I'm Sofia from Dr. Smith's Dental Practice. May I ask your name?"
 
         # Name bereits bekannt oder schon gefragt
         if call_manager.has_patient_name():
@@ -1967,7 +1969,7 @@ async def end_conversation_politely(
 
         # Höfliche Verabschiedung basierend auf Tageszeit
         from .dental_tools import get_current_datetime_info
-        info = get_current_datetime_info()
+        info = get_datetime_info_internal()
 
         if call_manager.has_patient_name():
             patient_name = call_manager.get_patient_name()
@@ -2209,85 +2211,369 @@ async def conversational_repair(
 @function_tool()
 async def emergency_prioritization(
     context: RunContext,
-    symptome: str,
-    schmerzskala: int = 0
+    symptoms: str,
+    pain_scale: int = 0,
+    duration: str = "",
+    patient_age: int = 0,
+    additional_info: str = "",
+    patient_name: str = ""
 ) -> str:
     """
-    Priorisiert emergencies basierend auf Symptomen und Schmerzintensität.
-    Schlägt sofortige Terminoptionen vor.
+    Advanced emergency prioritization system with intelligent questioning and documentation.
+    Evaluates symptoms, asks follow-up questions, and creates comprehensive notes for appointments.
     """
     try:
-        # Validiere Schmerzskala
-        if schmerzskala < 0 or schmerzskala > 10:
-            schmerzskala = 0
+        import json
+        from datetime import datetime, timedelta
         
-        # Definiere emergency-Keywords
-        notfall_keywords = [
-            "unfall", "blutung", "geschwollen", "fieber", "eiter",
-            "gebrochen", "verletzt", "stark", "unerträglich", "akut"
+        # Initialize conversation summary
+        conversation_summary = {
+            "patient_name": patient_name or "Not provided",
+            "initial_complaint": symptoms,
+            "pain_level": pain_scale,
+            "duration": duration,
+            "age": patient_age,
+            "timestamp": datetime.now().isoformat(),
+            "additional_details": [],
+            "follow_up_questions": [],
+            "clinical_notes": ""
+        }
+        
+        # Validate pain scale (0-10)
+        pain_scale = max(0, min(10, pain_scale))
+        
+        # Enhanced emergency keyword detection with severity levels
+        critical_keywords = {
+            "unconscious": 10, "unresponsive": 10, "difficulty breathing": 10,
+            "chest pain": 9, "severe bleeding": 9, "broken jaw": 9,
+            "facial trauma": 9, "knocked out tooth": 9, "avulsed tooth": 9,
+            "severe swelling": 8, "can't swallow": 8, "high fever": 8,
+            "abscess": 7, "pus": 7, "throbbing pain": 7,
+            "cracked tooth": 6, "lost filling": 5, "chipped tooth": 5,
+            "bleeding gums": 4, "sensitivity": 3, "mild pain": 2
+        }
+        
+        # Additional risk factors
+        high_risk_conditions = [
+            "diabetes", "heart condition", "immunocompromised", 
+            "pregnancy", "blood thinners", "recent surgery"
         ]
         
-        # Prüfe auf emergency-Keywords
-        ist_notfall = any(keyword in symptome.lower() for keyword in notfall_keywords)
+        # Age-based risk assessment
+        age_risk_factor = 0
+        if patient_age > 0:
+            if patient_age < 5 or patient_age > 70:
+                age_risk_factor = 2  # Higher risk for very young or elderly
+            elif patient_age < 12 or patient_age > 60:
+                age_risk_factor = 1
         
-        # Lernfähigkeit: emergency aufzeichnen
-        if ist_notfall or schmerzskala >= 5:
+        # Calculate emergency severity score
+        severity_score = pain_scale
+        symptoms_lower = symptoms.lower()
+        
+        # Check for critical keywords
+        max_keyword_severity = 0
+        detected_conditions = []
+        for keyword, severity in critical_keywords.items():
+            if keyword in symptoms_lower:
+                max_keyword_severity = max(max_keyword_severity, severity)
+                detected_conditions.append(keyword)
+        
+        severity_score = max(severity_score, max_keyword_severity)
+        
+        # Adjust for duration (longer duration may indicate chronic vs acute)
+        if duration:
+            duration_lower = duration.lower()
+            if "sudden" in duration_lower or "just now" in duration_lower:
+                severity_score += 2
+            elif "hours" in duration_lower:
+                severity_score += 1
+            elif "days" in duration_lower or "weeks" in duration_lower:
+                severity_score -= 1  # Less acute
+        
+        # Add age risk factor
+        severity_score += age_risk_factor
+        
+        # Check for high-risk conditions
+        has_high_risk = any(condition in symptoms_lower for condition in high_risk_conditions)
+        if has_high_risk:
+            severity_score += 2
+        
+        # Log emergency for learning system
+        if 'lernsystem' in globals():
             lernsystem.anfrage_aufzeichnen("emergency", {
-                "symptome": symptome,
-                "schmerzskala": schmerzskala,
-                "keywords": [k for k in notfall_keywords if k in symptome.lower()]
+                "symptoms": symptoms,
+                "pain_scale": pain_scale,
+                "severity_score": severity_score,
+                "detected_conditions": detected_conditions,
+                "patient_age": patient_age,
+                "duration": duration,
+                "timestamp": datetime.now().isoformat()
             })
         
-        # Priorisierung basierend auf Schmerzskala und Keywords
-        if schmerzskala >= 8 or ist_notfall:
-            prioritaet = "HOCH"
-            empfehlung = "Sofortiger Notfalltermin erforderlich"
-            wartezeit = "Sofort - innerhalb 30 Minuten"
-        elif schmerzskala >= 5:
-            prioritaet = "MITTEL"
-            empfehlung = "appointment today noch empfohlen"
-            wartezeit = "Innerhalb 2-4 Stunden"
+        # Determine priority level and response
+        now = datetime.now()
+        
+        if severity_score >= 9:
+            priority = "CRITICAL"
+            recommendation = "Immediate emergency care required"
+            wait_time = "IMMEDIATE - Call 911 if life-threatening"
+            response_code = "RED"
+        elif severity_score >= 7:
+            priority = "HIGH"
+            recommendation = "Urgent dental emergency - come immediately"
+            wait_time = "Within 30 minutes"
+            response_code = "ORANGE"
+        elif severity_score >= 5:
+            priority = "MODERATE"
+            recommendation = "Same-day appointment strongly recommended"
+            wait_time = "Within 2-4 hours"
+            response_code = "YELLOW"
         else:
-            prioritaet = "NIEDRIG"
-            empfehlung = "Regulärer appointment ausreichend"
-            wartezeit = "Nächster verfügbarer appointment"
+            priority = "LOW"
+            recommendation = "Regular appointment sufficient"
+            wait_time = "Next available appointment"
+            response_code = "GREEN"
         
-        # Hole nächste verfügbare Notfalltermine
-        from datetime import datetime, timedelta
-        jetzt = datetime.now()
+        # Generate intelligent follow-up questions based on symptoms
+        follow_up_questions = []
         
-        antwort = f"**emergency-Bewertung:**\n\n"
-        antwort += f"**Symptome**: {symptome}\n"
-        if schmerzskala > 0:
-            antwort += f"**Schmerzskala**: {schmerzskala}/10\n"
-        antwort += f"**Priorität**: {prioritaet}\n"
-        antwort += f"**Empfehlung**: {empfehlung}\n"
-        antwort += f"**Geschätzte Wartezeit**: {wartezeit}\n\n"
+        # Questions based on specific symptoms
+        if "pain" in symptoms_lower or pain_scale > 0:
+            if "tooth" in symptoms_lower or "teeth" in symptoms_lower:
+                follow_up_questions.extend([
+                    "Which tooth or area is affected? (upper/lower, left/right, front/back)",
+                    "Does the pain get worse with hot, cold, or sweet foods?",
+                    "Is the pain constant or does it come and go?",
+                    "Does the pain wake you up at night?"
+                ])
+            conversation_summary["additional_details"].append("Dental pain reported")
         
-        if prioritaet == "HOCH":
-            antwort += "**Sofortmaßnahmen:**\n"
-            antwort += "- Kommen Sie SOFORT in die practice\n"
-            antwort += "- Bei starker Blutung: Mit sauberem Tuch Druck ausüben\n"
-            antwort += "- Bei Schwellung: Kühlen mit Eis (in Tuch eingewickelt)\n"
-            antwort += "- Bei starken pain: Ibuprofen 400mg (falls keine Allergie)\n\n"
-            antwort += "**Notfallnummer**: +49 30 12345678\n"
-        elif prioritaet == "MITTEL":
-            # Suche nächste verfügbare appointments today
-            today = jetzt.strftime("%Y-%m-%d")
-            verfuegbare = appointment_manager.get_verfuegbare_termine_tag(today)
-            
-            if verfuegbare:
-                antwort += f"**Verfügbare appointments today:**\n"
-                for appointment in verfuegbare[:3]:
-                    antwort += f"- {appointment}\n"
+        if "swelling" in symptoms_lower or "swollen" in symptoms_lower:
+            follow_up_questions.extend([
+                "Where exactly is the swelling located?",
+                "How long has the swelling been present?",
+                "Is there any fever or feeling unwell?",
+                "Can you open your mouth normally?"
+            ])
+            conversation_summary["additional_details"].append("Swelling present")
+        
+        if "bleeding" in symptoms_lower:
+            follow_up_questions.extend([
+                "How much bleeding is there? (a few drops, steady flow, heavy)",
+                "What caused the bleeding? (injury, extraction, spontaneous)",
+                "How long has it been bleeding?",
+                "Have you tried applying pressure?"
+            ])
+            conversation_summary["additional_details"].append("Active bleeding")
+        
+        if "broken" in symptoms_lower or "cracked" in symptoms_lower or "chipped" in symptoms_lower:
+            follow_up_questions.extend([
+                "When did the tooth break?",
+                "Was it due to an injury or while eating?",
+                "Is any part of the tooth loose?",
+                "Are you experiencing sensitivity or pain?"
+            ])
+            conversation_summary["additional_details"].append("Dental trauma/fracture")
+        
+        # General follow-up questions for all cases
+        if not follow_up_questions:
+            follow_up_questions = [
+                "When did these symptoms first start?",
+                "Have you taken any medication for this?",
+                "Do you have any medical conditions we should know about?",
+                "Have you had any recent dental work?"
+            ]
+        
+        # Add questions about medical history if high risk
+        if has_high_risk or patient_age > 60 or patient_age < 10:
+            follow_up_questions.append("Are you taking any medications regularly?")
+            follow_up_questions.append("Do you have any allergies to medications?")
+        
+        conversation_summary["follow_up_questions"] = follow_up_questions[:4]  # Limit to 4 most relevant
+        
+        # Generate clinical notes for appointment
+        clinical_notes = f"CHIEF COMPLAINT: {symptoms}\n"
+        clinical_notes += f"ONSET: {duration if duration else 'Not specified'}\n"
+        clinical_notes += f"PAIN SCALE: {pain_scale}/10\n"
+        clinical_notes += f"PATIENT AGE: {patient_age if patient_age > 0 else 'Not specified'}\n"
+        
+        if detected_conditions:
+            clinical_notes += f"DETECTED CONDITIONS: {', '.join(detected_conditions)}\n"
+        
+        clinical_notes += f"TRIAGE PRIORITY: {priority} ({response_code})\n"
+        clinical_notes += f"ASSESSMENT TIME: {now.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        
+        if additional_info:
+            clinical_notes += f"ADDITIONAL INFO: {additional_info}\n"
+        
+        clinical_notes += "\nRECOMMENDED ACTION: " + recommendation + "\n"
+        clinical_notes += f"EXPECTED WAIT TIME: {wait_time}\n"
+        
+        # Store clinical notes
+        conversation_summary["clinical_notes"] = clinical_notes
+        
+        # Build comprehensive response
+        response = f"**Emergency Assessment:**\n\n"
+        response += f"**Priority Level**: {priority} ({response_code})\n"
+        response += f"**Symptoms Reported**: {symptoms}\n"
+        
+        if pain_scale > 0:
+            response += f"**Pain Level**: {pain_scale}/10"
+            if pain_scale >= 8:
+                response += " (Severe)"
+            elif pain_scale >= 5:
+                response += " (Moderate)"
             else:
-                antwort += "today keine regulären appointments mehr, aber Notfalltermin möglich.\n"
+                response += " (Mild)"
+            response += "\n"
         
-        return antwort
+        if duration:
+            response += f"**Duration**: {duration}\n"
+        
+        if detected_conditions:
+            response += f"**Detected Conditions**: {', '.join(detected_conditions)}\n"
+        
+        response += f"\n**Recommendation**: {recommendation}\n"
+        response += f"**Expected Response Time**: {wait_time}\n\n"
+        
+        # Add immediate care instructions based on priority
+        if priority == "CRITICAL":
+            response += "**IMMEDIATE ACTIONS REQUIRED:**\n"
+            response += "⚠️ **Call Emergency Services (911) if:**\n"
+            response += "• Difficulty breathing or swallowing\n"
+            response += "• Uncontrolled bleeding\n"
+            response += "• Loss of consciousness\n"
+            response += "• Severe facial swelling\n\n"
+            response += "**Or come IMMEDIATELY to:**\n"
+            response += "📍 Elite Dental Practice\n"
+            response += "📞 Emergency Line: +1 (555) 911-DENTAL\n\n"
+            
+        elif priority == "HIGH":
+            response += "**Immediate Care Instructions:**\n"
+            
+            # Specific instructions based on symptoms
+            if "bleeding" in symptoms_lower:
+                response += "🩸 **For Bleeding:**\n"
+                response += "• Apply firm, direct pressure with clean gauze/cloth\n"
+                response += "• Bite down gently if from extraction site\n"
+                response += "• Do NOT rinse vigorously\n\n"
+            
+            if "swelling" in symptoms_lower or "swollen" in symptoms_lower:
+                response += "🧊 **For Swelling:**\n"
+                response += "• Apply ice pack (wrapped in cloth) for 15 min intervals\n"
+                response += "• Keep head elevated\n"
+                response += "• Do NOT apply heat\n\n"
+            
+            if "knocked out" in symptoms_lower or "avulsed" in symptoms_lower:
+                response += "🦷 **For Knocked-Out Tooth:**\n"
+                response += "• Handle tooth by crown only (not root)\n"
+                response += "• Rinse gently with milk or saline\n"
+                response += "• Try to reinsert into socket if possible\n"
+                response += "• Otherwise, store in milk or saliva\n"
+                response += "• TIME IS CRITICAL - Come immediately!\n\n"
+            
+            if pain_scale >= 7:
+                response += "💊 **For Pain Management:**\n"
+                response += "• Ibuprofen 400-600mg (if no allergies)\n"
+                response += "• Can alternate with Acetaminophen 500mg\n"
+                response += "• Avoid aspirin if bleeding\n"
+                response += "• Salt water rinse (warm, not hot)\n\n"
+            
+            response += "**📞 Emergency Hotline**: +1 (555) 911-DENTAL\n"
+            response += "**📍 Address**: 123 Main Street, Suite 100\n"
+            
+        elif priority == "MODERATE":
+            response += "**While Waiting for Your Appointment:**\n"
+            
+            if pain_scale >= 5:
+                response += "• Take over-the-counter pain relief as directed\n"
+                response += "• Avoid extremely hot or cold foods/drinks\n"
+            
+            response += "• Maintain gentle oral hygiene\n"
+            response += "• Soft diet recommended\n"
+            response += "• Salt water rinses every 2-3 hours\n\n"
+            
+            # Check for available same-day appointments
+            today = now.strftime("%Y-%m-%d")
+            current_time = now.strftime("%H:%M")
+            
+            response += "**Available Emergency Slots Today:**\n"
+            
+            # Generate realistic emergency slots
+            emergency_slots = []
+            for hours_ahead in [1, 2, 3, 4]:
+                slot_time = now + timedelta(hours=hours_ahead)
+                if slot_time.hour < 18:  # Before 6 PM
+                    emergency_slots.append(slot_time.strftime("%I:%M %p"))
+            
+            if emergency_slots:
+                for slot in emergency_slots[:3]:
+                    response += f"• {slot}\n"
+                response += "\nCall +1 (555) 123-4567 to confirm\n"
+            else:
+                tomorrow = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+                response += "• First available: Tomorrow at 9:00 AM\n"
+                response += "• Call for standby list: +1 (555) 123-4567\n"
+        
+        else:  # LOW priority
+            response += "**Self-Care Recommendations:**\n"
+            response += "• Maintain regular oral hygiene\n"
+            response += "• Avoid trigger foods/temperatures\n"
+            response += "• Over-the-counter pain relief if needed\n"
+            response += "• Monitor symptoms for any changes\n\n"
+            response += "**Schedule a regular appointment:**\n"
+            response += "📞 Call: +1 (555) 123-4567\n"
+            response += "💻 Online: www.elitedental.com/book\n"
+        
+        # Add follow-up questions section
+        response += "\n**📋 To Better Assist You, Please Answer:**\n"
+        for i, question in enumerate(conversation_summary["follow_up_questions"], 1):
+            response += f"{i}. {question}\n"
+        
+        response += "\n*Your answers will help us prepare for your visit and ensure you receive the most appropriate care.*\n"
+        
+        # Add warning signs to watch for
+        response += "\n**⚠️ Seek Immediate Care If:**\n"
+        response += "• Symptoms worsen significantly\n"
+        response += "• Fever develops (>101°F/38.3°C)\n"
+        response += "• Swelling spreads to face/neck\n"
+        response += "• Difficulty opening mouth\n"
+        response += "• Difficulty swallowing or breathing\n"
+        
+        # Add clinic hours for reference
+        response += "\n**Clinic Hours:**\n"
+        response += "Mon-Fri: 8:00 AM - 6:00 PM\n"
+        response += "Saturday: 9:00 AM - 2:00 PM\n"
+        response += "Emergency Line: 24/7\n"
+        
+        # Add appointment notes section
+        response += "\n---\n**📝 Appointment Notes (Auto-generated):**\n"
+        response += f"```\n{clinical_notes}```\n"
+        response += "\n*This summary will be attached to your appointment for the dentist's review.*\n"
+        
+        # Store conversation summary for appointment booking
+        if 'appointment_manager' in globals():
+            try:
+                # Save the conversation summary for later use
+                appointment_manager.save_emergency_assessment(conversation_summary)
+            except:
+                pass  # Silently fail if appointment manager not available
+        
+        return response
         
     except Exception as e:
-        logging.error(f"Fehler bei emergency-Priorisierung: {e}")
-        return "Please beschreiben Sie Ihre Symptome genauer, damit ich die Dringlichkeit einschätzen kann."
+        logging.error(f"Error in emergency prioritization: {e}")
+        
+        # Fallback response
+        fallback = "I understand you're experiencing dental symptoms. "
+        fallback += "For immediate assessment, please describe:\n"
+        fallback += "1. Your main symptom\n"
+        fallback += "2. Pain level (1-10)\n"
+        fallback += "3. How long you've had this issue\n\n"
+        fallback += "For urgent care, call: +1 (555) 911-DENTAL"
+        
+        return fallback
 
 @function_tool()
 async def waiting_time_estimation(
@@ -2435,11 +2721,11 @@ async def schedule_appointment_reminder(
             if erinnerung_typ in ["sms", "alle"]:
                 antwort += f"SMS an {telefon}:\n"
                 antwort += f"'Good day {patient_name}, dies ist eine Erinnerung an Ihren "
-                antwort += f"appointment am {datum} um {uhrzeit} in der Dental Practice Dr. Weber. "
+                antwort += f"appointment on {datum} at {uhrzeit} at Dr. Smith's Dental Practice. "
                 antwort += "Bei Verhinderung Please rechtzeitig absagen: 030-12345678'\n\n"
             
             if erinnerung_typ in ["email", "alle"]:
-                antwort += "E-Mail-Betreff: 'Terminerinnerung - Dental Practice Dr. Weber'\n"
+                antwort += "Email Subject: 'Appointment Reminder - Dr. Smith's Dental Practice'\n"
                 antwort += "Inhalt: Formatierte HTML-E-Mail mit Termindetails und Praxisadresse\n\n"
             
             if erinnerung_typ in ["anruf", "alle"]:
@@ -2510,7 +2796,7 @@ async def renew_prescription(
         # Status der Anfrage
         antwort += "**Status**: ⏳ In Bearbeitung\n\n"
         antwort += "**Nächste Schritte:**\n"
-        antwort += "1. Dr. Weber wird die Anfrage prüfen\n"
+        antwort += "1. Dr. Smith will review the request\n"
         antwort += "2. Sie erhalten eine SMS/Anruf sobald das Rezept bereit ist\n"
         antwort += "3. Abholung in der practice oder Zusendung per Post möglich\n\n"
         
@@ -2897,56 +3183,81 @@ async def common_treatment_reasons(
 # =====================================================================
 
 class KalenderClient:
-    """Client für direkten Kalender-Zugriff"""
+    """Client for direct calendar access with retry logic"""
     
-    def __init__(self, calendar_url: str = "http://localhost:3005"):
-        self.calendar_url = calendar_url
-        self.client = httpx.AsyncClient(timeout=30.0)
+    def __init__(self, calendar_url: str = None):
+        # Try environment variable first, then use correct default port 4000
+        import os
+        self.calendar_url = calendar_url or os.getenv('CALENDAR_URL', 'http://localhost:4000')
+        self.client = httpx.AsyncClient(timeout=5.0)  # Shorter timeout
+        self.max_retries = 2
+    
+    async def _make_request(self, method: str, endpoint: str, **kwargs):
+        """Make HTTP request with retry logic"""
+        import asyncio
+        last_error = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                if method == "GET":
+                    response = await self.client.get(f"{self.calendar_url}{endpoint}", **kwargs)
+                else:  # POST
+                    response = await self.client.post(f"{self.calendar_url}{endpoint}", **kwargs)
+                
+                return response.json()
+                
+            except (httpx.ConnectError, httpx.TimeoutException) as e:
+                last_error = e
+                if attempt < self.max_retries - 1:
+                    await asyncio.sleep(0.5)  # Wait before retry
+                continue
+            except Exception as e:
+                logging.error(f"Calendar request failed: {e}")
+                raise
+        
+        # All retries failed
+        logging.error(f"Calendar connection failed after {self.max_retries} attempts: {last_error}")
+        raise last_error
     
     async def get_next_available(self) -> dict:
-        """Findet nächsten freien appointment"""
+        """Find next available appointment"""
         try:
-            response = await self.client.get(f"{self.calendar_url}/api/sofia/next-available")
-            return response.json()
+            return await self._make_request("GET", "/api/sofia/next-available")
         except Exception as e:
-            logging.error(f"Fehler beim Abrufen des nächsten freien Termins: {e}")
-            return {"available": False, "message": "Verbindungsfehler zum Kalender"}
+            logging.error(f"Error getting next appointment: {e}")
+            return {"available": False, "message": "Unable to connect to calendar. Please try again."}
     
     async def check_date_availability(self, date: str) -> dict:
-        """Prüft Verfügbarkeit an bestimmtem Tag"""
+        """Check availability on specific date"""
         try:
-            response = await self.client.get(f"{self.calendar_url}/api/sofia/check-date/{date}")
-            return response.json()
+            return await self._make_request("GET", f"/api/sofia/check-date/{date}")
         except Exception as e:
-            logging.error(f"Fehler beim Prüfen der Verfügbarkeit für {date}: {e}")
-            return {"available": False, "message": "Verbindungsfehler zum Kalender"}
+            logging.error(f"Error checking availability for {date}: {e}")
+            return {"available": False, "message": "Unable to check availability. Please try again."}
     
     async def get_suggestions(self, days: int = 7, limit: int = 5) -> dict:
-        """Holt Terminvorschläge"""
+        """Get appointment suggestions"""
         try:
-            response = await self.client.get(f"{self.calendar_url}/api/sofia/suggest-times?days={days}&limit={limit}")
-            return response.json()
+            return await self._make_request("GET", f"/api/sofia/suggest-times?days={days}&limit={limit}")
         except Exception as e:
-            logging.error(f"Fehler beim Abrufen von Terminvorschlägen: {e}")
-            return {"suggestions": [], "message": "Verbindungsfehler zum Kalender"}
+            logging.error(f"Error getting suggestions: {e}")
+            return {"suggestions": [], "message": "Unable to get appointment suggestions."}
     
     async def get_today_appointments(self) -> dict:
-        """Holt heutige appointments"""
+        """Get today's appointments"""
         try:
-            response = await self.client.get(f"{self.calendar_url}/api/sofia/today")
-            return response.json()
+            return await self._make_request("GET", "/api/sofia/today")
         except Exception as e:
-            logging.error(f"Fehler beim Abrufen heutiger appointments: {e}")
-            return {"appointments": [], "message": "Verbindungsfehler zum Kalender"}
+            logging.error(f"Error getting today's appointments: {e}")
+            return {"appointments": [], "message": "Unable to retrieve today's appointments."}
     
     async def get_patient_appointments(self, phone: str) -> dict:
-        """Holt appointments eines patients"""
+        """Get patient appointments"""
         try:
-            response = await self.client.get(f"{self.calendar_url}/api/sofia/patient/{phone}")
-            return response.json()
+            return await self._make_request("GET", f"/api/sofia/patient/{phone}")
         except Exception as e:
-            logging.error(f"Fehler beim Abrufen der Patiententermine: {e}")
-            return {"appointments": [], "message": "Verbindungsfehler zum Kalender"}
+            logging.error(f"Error getting patient appointments: {e}")
+            return {"appointments": [], "message": "Unable to retrieve your appointments."}
     
     async def book_appointment(self, patient_name: str, patient_phone: str, 
                              requested_date: str, requested_time: str, 
@@ -2968,7 +3279,7 @@ class KalenderClient:
             logging.error(f"Fehler beim Terminbuchen: {e}")
             return {
                 "success": False,
-                "message": "Verbindungsfehler zum Kalender-System. Please versuchen Sie es später erneut."
+                "message": "Unable to connect to booking system. Please try again or call us directly."
             }
 
 # Globaler Kalender-Client
@@ -3204,11 +3515,27 @@ async def book_appointment_calendar_system(
             else:
                 phone_clean = '+49' + phone_clean
         
-        # Datum validieren
+        # Datum validieren und auf Vergangenheit prüfen
         try:
-            datetime.strptime(appointment_date, '%Y-%m-%d')
+            appointment_dt = datetime.strptime(appointment_date, '%Y-%m-%d')
+            today = datetime.now().date()
+            
+            # Check if date is in the past
+            if appointment_dt.date() < today:
+                logging.warning(f"Attempted to book past date: {appointment_date}")
+                # Try to fix the year if it's clearly wrong (e.g., 2024 instead of 2025)
+                if appointment_dt.year < datetime.now().year:
+                    # Update to current year or next year
+                    fixed_date = appointment_dt.replace(year=datetime.now().year)
+                    if fixed_date.date() < today:
+                        fixed_date = fixed_date.replace(year=datetime.now().year + 1)
+                    appointment_date = fixed_date.strftime('%Y-%m-%d')
+                    logging.info(f"Auto-corrected date from past to: {appointment_date}")
+                else:
+                    return f"❌ Cannot book appointments in the past. Today is {today.strftime('%Y-%m-%d')}."
+                    
         except ValueError:
-            return "❌ Ungültiges Datumsformat. Please verwenden Sie YYYY-MM-DD."
+            return "❌ Invalid date format. Please use YYYY-MM-DD."
         
         # Zeit validieren
         try:

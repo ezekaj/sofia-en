@@ -792,10 +792,10 @@ class AppointmentManager:
         ✅ REPARIERT: Verwendet die zentrale get_current_datetime_info() Funktion
         Verhindert Datums-Inkonsistenzen zwischen verschiedenen Modulen
         """
-        from .dental_tools import get_current_datetime_info
+        from .dental_tools import get_datetime_info_internal
 
-        # Verwende die zentrale Funktion
-        zentrale_info = get_current_datetime_info()
+        # Verwende die zentrale interne Funktion (ohne context parameter)
+        zentrale_info = get_datetime_info_internal()
 
         # Erweitere um appointment_manager spezifische Informationen
         jetzt = zentrale_info['datetime']
@@ -926,6 +926,64 @@ class AppointmentManager:
         antwort += f"\n💡 **Welcher Termin passt Ihnen am besten?**"
         
         return antwort
+    
+    def get_smart_appointment_suggestions(self, treatment_type: str = "Routine Check-up", 
+                                         start_date: str = "", count: int = 5) -> str:
+        """English version of get_intelligente_terminvorschlaege - provides smart appointment suggestions"""
+        now = datetime.now()
+        datetime_info = self.get_current_datetime_info()
+        
+        # Determine start date intelligently
+        if not start_date:
+            # If it's still early in the day, suggest today
+            if now.hour < 12 and datetime_info["ist_arbeitstag"] and datetime_info["praxis_offen"]:
+                start_date = datetime_info["aktuelles_datum"]
+            else:
+                # Otherwise start from tomorrow
+                start_date = datetime_info["morgen"]
+        
+        available_appointments = self.get_verfuegbare_termine(start_date, count)
+        
+        if not available_appointments:
+            return f"🔍 Unfortunately, no appointments available soon for {treatment_type}."
+        
+        # Smart response based on current context
+        response = f"🗓️ **Appointment Suggestions for {treatment_type}**\n\n"
+        response += f"📅 Today is {datetime_info['wochentag']}, {datetime_info['formatiert']}\n"
+        
+        if datetime_info["ist_heute_arbeitstag"]:
+            response += f"🏥 Practice open today: {datetime_info['arbeitszeiten_heute']['vormittag']}"
+            if datetime_info['arbeitszeiten_heute']['nachmittag']:
+                response += f", {datetime_info['arbeitszeiten_heute']['nachmittag']}"
+            response += "\n"
+        
+        response += f"\n✅ **Next {len(available_appointments)} available appointments:**\n\n"
+        
+        for i, appointment in enumerate(available_appointments, 1):
+            # Additional info based on timing
+            appointment_date = datetime.strptime(appointment['datum'], '%Y-%m-%d')
+            days_difference = (appointment_date - now).days
+            
+            if days_difference == 0:
+                time_info = " (today)"
+            elif days_difference == 1:
+                time_info = " (tomorrow)"
+            elif days_difference == 2:
+                time_info = " (day after tomorrow)"
+            elif days_difference <= 7:
+                time_info = f" (in {days_difference} days)"
+            else:
+                time_info = f" (in {days_difference} days)"
+            
+            # Format date in English style
+            formatted_date = appointment_date.strftime('%A, %B %d, %Y')
+            time_12hr = datetime.strptime(appointment['uhrzeit'], '%H:%M').strftime('%I:%M %p')
+            
+            response += f"{i}. {formatted_date} at {time_12hr}{time_info}\n"
+        
+        response += f"\n💡 **Which appointment works best for you?**"
+        
+        return response
 
 # Globale Instanz
 appointment_manager = AppointmentManager()

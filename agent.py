@@ -54,6 +54,7 @@ from src.dental.dental_tools import (
     sofia_get_todays_appointments,
     sofia_find_my_appointments_extended,
     book_appointment_calendar_system,  # NEW: Calendar integration booking
+    emergency_prioritization,  # Emergency handling
     call_manager  # Import the call manager
 )
 
@@ -69,7 +70,7 @@ class DentalReceptionist(Agent):
         super().__init__(
             instructions=AGENT_INSTRUCTION,
             llm=google.beta.realtime.RealtimeModel(
-                voice="Sage",  # Female voice for English
+                voice="Aoede",  # Female voice
                 language="en-US",  # English language
                 temperature=0.7,
             ),
@@ -117,7 +118,8 @@ class DentalReceptionist(Agent):
                 sofia_smart_appointment_suggestions,
                 sofia_get_todays_appointments,
                 sofia_find_my_appointments_extended,
-                book_appointment_calendar_system  # NEW: Calendar integration booking
+                book_appointment_calendar_system,  # NEW: Calendar integration booking
+                emergency_prioritization  # Emergency handling with pain scale
             ],
         )
         self.should_end_conversation = False
@@ -191,7 +193,7 @@ async def entrypoint(ctx: agents.JobContext):
             # Subscribe to the audio track
             track = await publication.track()
             if track:
-                print("🎤 Listening...")
+                print("[MIC] Listening...")
                 logger.info("Listening to audio track")
                 
                 # Start processing audio
@@ -232,7 +234,7 @@ async def entrypoint(ctx: agents.JobContext):
         room_input_options=room_input_options,
     )
     
-    print("🎯 Ready to listen! Please speak now...")
+    print("Ready to listen! Please speak now...")
     logger.info("Agent ready to listen")
     
     # Generate initial greeting with AUTOMATIC date/time detection
