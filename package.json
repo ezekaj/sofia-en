@@ -2,10 +2,10 @@
   "name": "sofia-ai-ultrathink",
   "version": "3.0.0",
   "description": "Sofia AI - ULTRATHINK Guaranteed Working Deployment",
-  "main": "ultrathink-server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node ultrathink-server.js",
-    "dev": "node ultrathink-server.js",
+    "start": "node server.js",
+    "dev": "node server.js",
     "production": "node start-production.js",
     "health": "curl -f http://localhost:${PORT:-8080}/health || exit 1",
     "postinstall": "echo ✅ Sofia AI dependencies installed successfully"
