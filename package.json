@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "production": "node start-production.js",
+    "production": "node server.js",
     "health": "curl -f http://localhost:${PORT:-8080}/health || exit 1",
     "postinstall": "echo ✅ Sofia AI dependencies installed successfully"
   },

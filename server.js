@@ -41,8 +41,10 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    service: 'Sofia AI - Dental Assistant',
+    service: 'NEW SERVER.JS WITH JWT TOKENS - RAILWAY VERSION 2.0',
     version: '2.0.0',
+    server_file: 'server.js',
+    jwt_tokens: 'ENABLED',
     uptime: process.uptime()
   });
 });

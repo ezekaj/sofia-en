@@ -1,0 +1,7 @@
+# Railway ignore file - force clean deployment
+ultrathink-server.js*
+start-production.js
+deploy-sofia.js
+validate-deployment.js
+*.old
+node_modules/.cache/
