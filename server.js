@@ -6,6 +6,7 @@ const fs = require('fs');
 
 console.log('🚀 Sofia AI Server Starting...');
 console.log('📊 Environment:', process.env.NODE_ENV || 'production');
+console.log('🔧 NEW SERVER.JS with JWT TOKENS - Railway Deploy Version 2.0');
 
 const app = express();
 const server = http.createServer(app);
