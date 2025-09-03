@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = [
+  "npm install",
+  "cd calendar-sofia && npm install"
+]
+
+[phases.build]
+cmds = ["echo 'Sofia AI Build Complete'"]
+
+[start]
+cmd = "npm start"

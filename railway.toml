@@ -1,19 +1,15 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "./Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python agent.py"
+startCommand = "npm start"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
+healthcheckInterval = 10
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
-numReplicas = 1
+restartPolicyMaxRetries = 5
 
-[[services]]
-name = "sofia-agent"
-targetPort = 8080
-
-[services.sofia-agent]
-healthcheckPath = "/health"
-healthcheckInterval = 30
+[variables]
+NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "false"
+NIXPACKS_NPM_INSTALL_CMD = "npm install"

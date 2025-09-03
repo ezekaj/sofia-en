@@ -47,10 +47,36 @@
         "timestamp": "2025-08-19T00:08:57.508050"
       },
       "zeitstempel": "2025-08-19T00:08:57.508050"
+    },
+    {
+      "typ": "emergency",
+      "details": {
+        "symptoms": "severe pain on my teeth",
+        "pain_scale": 10,
+        "severity_score": 10,
+        "detected_conditions": [],
+        "patient_age": 0,
+        "duration": "",
+        "timestamp": "2025-08-19T00:31:19.177408"
+      },
+      "zeitstempel": "2025-08-19T00:31:19.177408"
+    },
+    {
+      "typ": "emergency",
+      "details": {
+        "symptoms": "Pain in five teeth",
+        "pain_scale": 7,
+        "severity_score": 7,
+        "detected_conditions": [],
+        "patient_age": 0,
+        "duration": "",
+        "timestamp": "2025-08-20T16:11:40.470786"
+      },
+      "zeitstempel": "2025-08-20T16:11:40.470786"
     }
   ],
   "muster": {
-    "emergency": 4
+    "emergency": 6
   },
   "optimierungen": {}
 }
