@@ -13,6 +13,7 @@ const fs = require('fs');
 
 console.log('🚀 ULTRATHINK Sofia AI Server Starting...');
 console.log('📊 Environment:', process.env.NODE_ENV || 'production');
+console.log('🔧 LiveKit JWT Token Generation: ENABLED with livekit-server-sdk');
 
 const app = express();
 const server = http.createServer(app);
