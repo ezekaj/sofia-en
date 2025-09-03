@@ -1,1 +1,1 @@
-web: NODE_ENV=production PORT=$PORT node ultrathink-server.js
+web: NODE_ENV=production PORT=$PORT node server.js
