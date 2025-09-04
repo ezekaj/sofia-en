@@ -165,15 +165,27 @@ io.on('connection', (socket) => {
 // Serve main calendar interface
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, 'calendar-sofia', 'public', 'index.html');
+  console.log('🔍 Looking for calendar at:', indexPath);
+  console.log('🔍 File exists:', fs.existsSync(indexPath));
+  
   if (fs.existsSync(indexPath)) {
+    console.log('✅ Serving calendar interface');
     res.sendFile(indexPath);
   } else {
+    console.log('❌ Calendar not found, serving fallback');
+    // List directory contents to debug
+    const calendarDir = path.join(__dirname, 'calendar-sofia');
+    if (fs.existsSync(calendarDir)) {
+      const contents = fs.readdirSync(calendarDir);
+      console.log('📁 calendar-sofia contents:', contents);
+    }
     res.send(`
       <h1>🎯 Sofia AI Dental Assistant</h1>
       <p>Voice-powered dental practice assistant ready!</p>
       <p>Status: ✅ Server Running</p>
       <p>LiveKit: ✅ Ready</p>
-      <p>Calendar: ✅ Ready</p>
+      <p>Calendar: ❌ Calendar files not found</p>
+      <p>Looking for: ${indexPath}</p>
       <a href="/health">Health Check</a>
     `);
   }
