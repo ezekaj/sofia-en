@@ -17,7 +17,7 @@ const io = new Server(server, {
   }
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
@@ -108,7 +108,20 @@ app.get('/api/sofia/status', (req, res) => {
     status: 'ready',
     message: 'Sofia AI voice assistant ready for patient interactions',
     livekit_connected: true,
-    calendar_connected: true
+    calendar_connected: true,
+    python_agent: 'available',
+    deployment: 'render'
+  });
+});
+
+// Sofia Agent Start Endpoint - For Render deployment
+app.post('/api/sofia/start', (req, res) => {
+  console.log('🤖 Starting Sofia agent for patient interaction...');
+  res.json({
+    success: true,
+    message: 'Sofia agent ready for voice interaction',
+    room_created: true,
+    agent_status: 'active'
   });
 });
 

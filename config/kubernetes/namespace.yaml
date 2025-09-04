@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sofia-dental
-  labels:
-    name: sofia-dental
-    app: dental-practice

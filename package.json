@@ -1,7 +1,7 @@
 {
-  "name": "sofia-ai-ultrathink",
-  "version": "3.0.0",
-  "description": "Sofia AI - ULTRATHINK Guaranteed Working Deployment",
+  "name": "sofia-ai-render",
+  "version": "4.0.0",
+  "description": "Sofia AI - Complete Dental Assistant with Voice & Calendar",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
