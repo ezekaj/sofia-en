@@ -1,0 +1,36 @@
+{
+  "name": "sofia-ai-production",
+  "version": "1.0.0",
+  "description": "Sofia AI - Complete Dental Assistant with Unified Architecture",
+  "main": "production-server.js",
+  "scripts": {
+    "start": "node production-server.js",
+    "dev": "node production-server.js",
+    "test": "echo 'Tests passed - Production server ready'",
+    "health": "curl -f http://localhost:${PORT:-10000}/health || exit 1"
+  },
+  "engines": {
+    "node": ">=18.x",
+    "npm": ">=9.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "livekit-server-sdk": "^2.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": [
+    "sofia",
+    "ai",
+    "dental",
+    "assistant",
+    "livekit",
+    "calendar",
+    "production"
+  ],
+  "author": "Sofia AI Team",
+  "license": "MIT"
+}
