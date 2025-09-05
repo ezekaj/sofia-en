@@ -1,11 +1,9 @@
 # Sofia AI Python Dependencies for Production
-livekit-agents==0.8.3
-livekit-plugins-google==0.5.8
-livekit-plugins-noise-cancellation==0.3.8
-google-generativeai==0.8.3
-python-dotenv==1.0.0
-requests==2.32.3
-websocket-client==1.8.0
-pydub==0.25.1
-asyncio==3.4.3
-sqlite3
+livekit-agents>=1.0.0
+livekit-plugins-google>=1.2.8
+livekit-plugins-noise-cancellation>=0.5.0
+google-generativeai>=0.8.3
+python-dotenv>=1.0.0
+requests>=2.32.3
+websocket-client>=1.8.0
+pydub>=0.25.1
