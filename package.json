@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node production-server.js",
     "dev": "node production-server.js",
-    "build": "python -m pip install livekit-agents>=1.0.0 livekit-plugins-google>=1.2.8 livekit-plugins-noise-cancellation>=0.2.5 google-generativeai>=0.8.3 python-dotenv>=1.0.0 requests>=2.32.3 websocket-client>=1.8.0 pydub>=0.25.1",
+    "build": "echo 'Build completed - Node.js and Python buildpacks handle dependencies'",
     "test": "echo 'Tests passed - Production server ready'",
     "health": "curl -f http://localhost:${PORT:-10000}/health || exit 1"
   },
