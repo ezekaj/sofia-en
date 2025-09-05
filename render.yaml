@@ -2,12 +2,12 @@ services:
   # Sofia AI Unified Production Server
   - type: web
     name: sofia-ai-production
-    runtime: docker
+    runtime: node
     plan: starter
     region: oregon
     repo: https://github.com/ezekaj/sofia-en.git
     branch: main
-    buildCommand: docker build -t sofia-ai .
+    buildCommand: npm install && pip install -r requirements.txt
     startCommand: node production-server.js
     healthCheckPath: /health
     autoDeploy: false
