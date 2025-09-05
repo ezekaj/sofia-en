@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node production-server.js",
     "dev": "node production-server.js",
-    "build": "echo 'Build completed - Node.js and Python buildpacks handle dependencies'",
+    "build": "pip3 install -r requirements.txt || echo 'Python dependencies install failed, continuing...'",
     "test": "echo 'Tests passed - Production server ready'",
     "health": "curl -f http://localhost:${PORT:-10000}/health || exit 1"
   },
