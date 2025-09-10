@@ -1,42 +1,57 @@
 services:
-  # Sofia AI Unified Production Server
+  # Sofia AI WebSocket Bridge Backend Service
   - type: web
-    name: sofia-ai-production
-    runtime: node
-    plan: starter
-    region: oregon
-    repo: https://github.com/ezekaj/sofia-en.git
-    branch: main
-    startCommand: node production-server.js
+    name: sofia-websocket-backend
+    runtime: docker
+    region: oregon  # Choose region close to your users (oregon, frankfurt, singapore)
+    plan: starter   # Can upgrade to paid plans later
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
-    autoDeploy: false
+    autoDeploy: false  # Manual deployment control
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 10000
+      # LiveKit Configuration - Your LiveKit Cloud instance
       - key: LIVEKIT_URL
         value: wss://sofia-y7ojalkh.livekit.cloud
       - key: LIVEKIT_API_KEY
         value: APILexYWwak6y55
       - key: LIVEKIT_API_SECRET
         value: ewMkNz2dcz2zRRA6eveAnn8dp8D0kFf7gg1yle06rXxH
+      
+      # Google AI Configuration - Your Google Generative AI key  
       - key: GOOGLE_API_KEY
-        value: AIzaSyCGXSa68qIQNtp8WEH_zYFF3UjIHS4EW2M
+        value: AIzaSyDX3AhMx3aMYtw0J_iYcRr4qyfca0uZ1k8
+      
+      # Database Configuration - SQLite stored on persistent disk
+      - key: DATABASE_URL
+        value: sqlite:///app/data/appointments.db
+      
+      # Server Configuration - Render will set PORT automatically, but we specify default
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      
+      # Environment Settings
+      - key: PYTHON_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DEBUG
+        value: false
       - key: PYTHONPATH
         value: /app
-      - key: PYTHON_UNBUFFERED
+      - key: PYTHONUNBUFFERED
         value: "1"
+        
+      # Language and Practice Settings for Sofia
+      - key: LANGUAGE
+        value: en-US
+      - key: PRACTICE_NAME
+        value: Sofia Dental Practice
     
-    # Persistent disk for SQLite database
+    # Persistent disk for SQLite database and logs
     disk:
       name: sofia-data
       mountPath: /app/data
-      sizeGB: 1
-
-# Custom domains configuration  
-domains:
-  - name: elosofia.site
-    type: apex
-  - name: www.elosofia.site
-    type: www
+      sizeGB: 2  # 2GB for appointments database and logs

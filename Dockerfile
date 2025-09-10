@@ -1,47 +1,45 @@
-# Production Dockerfile for Sofia AI Unified Server
-FROM node:18-slim
+# Dockerfile for Sofia AI WebSocket Bridge Backend
+# Uses Python 3.11 as base image (stable version compatible with LiveKit)
+FROM python:3.11-slim
 
-# Install Python and system dependencies
+# Set working directory inside the container
+WORKDIR /app
+
+# Install system dependencies needed for audio processing and LiveKit
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
-    build-essential \
+    gcc \
+    g++ \
+    make \
+    libffi-dev \
+    libssl-dev \
     portaudio19-dev \
     libasound2-dev \
     libsndfile1-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
-WORKDIR /app
+# Copy requirements.txt first (Docker layer caching optimization)
+COPY requirements.txt .
 
-# Copy package files and install Node.js dependencies
-COPY package*.json ./
-RUN npm ci --only=production
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt ./
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-# Copy application code
+# Copy the entire application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p dental-calendar/public data logs
+# Create necessary directories for data persistence
+RUN mkdir -p data logs
 
 # Set environment variables
-ENV NODE_ENV=production
-ENV PORT=10000
 ENV PYTHONPATH=/app
-ENV PYTHON_UNBUFFERED=1
+ENV PYTHONUNBUFFERED=1
 
-# Expose port
-EXPOSE 10000
+# Expose port 8000 (WebSocket server port)
+EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:10000/health || exit 1
+# Health check to ensure the service is running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
 
-# Start the unified server
-CMD ["node", "production-server.js"]
+# Command to run the WebSocket bridge server
+CMD ["python", "scripts/utilities/sofia_websocket_bridge.py"]
