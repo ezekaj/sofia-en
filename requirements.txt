@@ -1,30 +1,35 @@
-# Sofia AI Dependencies
-livekit==0.11.2
-livekit-agents==0.8.8
-livekit-plugins-google==0.8.4
-livekit-plugins-silero==0.8.2
-google-generativeai>=0.7.2
-google-cloud-texttospeech>=2.16.4
-google-cloud-speech>=2.24.1
+# Sofia Base Agent Requirements - Core Dependencies Only
 
-# Web Framework
-flask==3.1.1
-flask-cors==6.0.0
+# Core LiveKit and Voice Processing
+livekit
+livekit-agents
+livekit-plugins-google
+livekit-plugins-silero
+google-generativeai
 
-# Audio Processing  
-pyaudio>=0.2.11
-pydub>=0.25.1
-numpy>=1.24.3
-scipy>=1.10.1
+# Environment and Configuration
+python-dotenv
+requests
 
-# Database & Storage
-sqlalchemy>=2.0.19
+# Async and Web Support
+aiohttp
+websockets
 
 # Utilities
-python-dotenv>=1.0.0
-requests>=2.31.0
-websockets>=12.0
-aiohttp>=3.8.5
+numpy
+python-dateutil
 
-# Optional: Enhanced features
-openai>=1.3.0
+# Optional: For specializations that need databases
+# sqlalchemy
+
+# Optional: For specializations that need audio processing
+# pyaudio
+# pydub
+# scipy
+
+# Optional: For specializations that need web interfaces
+# flask
+# flask-cors
+
+# Optional: Alternative LLM support
+# openai
